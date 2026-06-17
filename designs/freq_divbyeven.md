@@ -2,32 +2,33 @@
 
 ![trajectory](../figures/freq_divbyeven_trajectory.png) ![axes](../figures/freq_divbyeven_axes.png)
 
-**Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 6, score 174.6):
+**Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 1, score 174.6):
 
 #### A — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 6: `optimize_counter_width`  (score 174.6, +74.6; area 1.60x depth 2.00x power 1.66x)
+#### A' — gen 1: `reduce_counter_width`  (score 174.6, +74.6; area 1.60x depth 2.00x power 1.66x)
 _model: qwen3-235b-a22b-2507_
 
-> The current design uses a 4-bit counter (`[3:0] cnt`) regardless of the value of `NUM_DIV`. However, since `NUM_DIV` is a parameter and divides by an even number, the maximum count value needed is `NUM_DIV/2 - 1`. For the default `NUM_DIV = 6`, this means the counter only needs to count up to 2 (i.e., 0, 1, 2), which fits in 2 bits. Using a 4-bit counter wastes area and power.
+> The current design uses a 4-bit counter (`[3:0] cnt`) to count up to `NUM_DIV/2 - 1`. However, `NUM_DIV` is parameterized with a default of 6, meaning the maximum count value is `6/2 - 1 = 2`, which requires only 2 bits (values 0, 1, 2). Using a 4-bit counter is overkill and wastes area and power.
 
-We can reduce area 
+By reducing the counter width to the minimum required — `WIDTH = $clog2(NUM_DIV/2)` — we save area a
 
 ```diff
 --- a/original.sv
 +++ b/original.sv
-@@ -1,29 +1,30 @@
- // EVOLVE-BLOCK-START
+@@ -1,30 +1,31 @@
  module freq_divbyeven(
      clk,
      rst_n,
      clk_div
  );
+ 
      input clk;
      input rst_n;
      output clk_div;
-     reg clk_div;
+ // EVOLVE-BLOCK-START
+ reg clk_div;
  
      parameter NUM_DIV = 6;
 -    reg    [3:0] cnt;

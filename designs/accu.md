@@ -2,50 +2,44 @@
 
 ![trajectory](../figures/accu_trajectory.png) ![axes](../figures/accu_axes.png)
 
-**Evolution path** — 3 edge(s) from the reference (gen 0, score 100) to the best (gen 12, score 101.4):
+**Evolution path** — 3 edge(s) from the reference (gen 0, score 100) to the best (gen 19, score 101.4):
 
 #### A — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 4: `accu_optimized`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
-_model: deepseek-v4-flash_
+#### A' — gen 2: `merge_accumulator_registers`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
+_model: qwen3-235b-a22b-2507_
 
-> Removed redundant register and simplified control logic to match the reference implementation, achieving minimal area and power. Uses a single accumulator register.
+> The current design uses two separate registers for accumulation: `data_out_reg` and `data_out`, which are updated identically in parallel. This is redundant and doubles the register area for the accumulator without any functional benefit. 
+
+Moreover, the output `data_out` is directly driven by a register that is conditionally updated, but since `data_out` is declared as `reg`, it already implies a
 
 ```diff
 --- a/original.sv
 +++ b/original.sv
-@@ -1,79 +1,64 @@
- // EVOLVE-BLOCK-START
+@@ -1,78 +1,63 @@
  `timescale 1ns/1ns
  
  module accu(
--    input               clk         ,   
-+    input               clk         ,
+     input               clk         ,
      input               rst_n       ,
      input       [7:0]   data_in     ,
      input               valid_in     ,
-- 
-+
+ 
      output  reg         valid_out     ,
      output  reg [9:0]   data_out
  );
--    
-+
-    reg [1:0] count;
+ // EVOLVE-BLOCK-START
+ reg [1:0] count;
     wire add_cnt;
     wire ready_add;
     wire end_cnt;
 -   reg [9:0]   data_out_reg;
- 
-+   // Control signals
-+   assign ready_add = !valid_out | valid_in;
+-
     assign add_cnt = ready_add;
     assign end_cnt = ready_add && (count == 'd3);
--   
--   //count
-+
-+   // Counter
+ 
+    //count
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
            count <= 0;
@@ -72,24 +66,27 @@ _model: deepseek-v4-flash_
 -   end
 -
 -    //data_out
-+   // Accumulator
++   //data_out: accumulate 4 input values
+    always @(posedge clk or negedge rst_n) begin
+       if(!rst_n) begin
+         data_out <= 0;
+       end
+       else if (add_cnt && count == 0) begin
+           data_out <= data_in;
+       end
+       else if (add_cnt) begin
 ... (diff truncated)
 ```
 
-#### A'' — gen 11: `reduce_logic_depth_with_direct_count_check`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
+#### A'' — gen 10: `eliminate_redundant_add_cnt`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
-> The current design uses a multi-step control path: `ready_add` → `add_cnt` → `end_cnt`, with `end_cnt` depending on both `ready_add` and `count==3`. This creates unnecessary logic depth due to the intermediate wire assignments and redundant conditions.
-
-We can reduce logic depth and area by:
-1. Eliminating the redundant `add_cnt` wire (used only as alias of `ready_add`)
-2. Simplifying `end_cnt` to
+> The wire `add_cnt` is assigned directly from `ready_add` and used only to gate the counter and accumulator updates. This creates an unnecessary netlist level that synthesis cannot optimize away due to the combinational loop risk, increasing area and parasitic load. By eliminating `add_cnt` and using `ready_add` directly, we reduce logic levels and remove redundant wiring, preserving functional equ
 
 ```diff
 --- a/original.sv
 +++ b/original.sv
-@@ -1,64 +1,60 @@
- // EVOLVE-BLOCK-START
+@@ -1,63 +1,60 @@
  `timescale 1ns/1ns
  
  module accu(
@@ -101,64 +98,66 @@ We can reduce logic depth and area by:
      output  reg         valid_out     ,
      output  reg [9:0]   data_out
  );
- 
-    reg [1:0] count;
+ // EVOLVE-BLOCK-START
+ reg [1:0] count;
 -   wire add_cnt;
--   wire ready_add;
+    wire ready_add;
     wire end_cnt;
- 
-    // Control signals
--   assign ready_add = !valid_out | valid_in;
 -   assign add_cnt = ready_add;
--   assign end_cnt = ready_add && (count == 'd3);
-+   assign end_cnt = (!valid_out | valid_in) && (count == 'd3);
++   assign ready_add = !valid_out | valid_in;
+    assign end_cnt = ready_add && (count == 'd3);
  
-    // Counter
+-   //count
++   //count: modulo-4 counter with reset on 4th input
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
            count <= 0;
         end
-        else if(end_cnt) begin
-           count <= 0;
-        end
+-       else if(end_cnt) begin
+-          count <= 0;
+-       end
 -       else if(add_cnt) begin
-+       else if(!valid_out | valid_in) begin
-           count <= count + 1;
+-          count <= count + 1;
++       else if(ready_add) begin
++          if (count == 2'd3) begin
++             count <= 0;
++          end else begin
++             count <= count + 1;
++          end
         end
     end
  
-    // Accumulator
+    //data_out: accumulate 4 input values
     always @(posedge clk or negedge rst_n) begin
        if(!rst_n) begin
          data_out <= 0;
        end
 -      else if (add_cnt && count == 0) begin
-+      else if ((!valid_out | valid_in) && count == 0) begin
++      else if (ready_add && count == 0) begin
            data_out <= data_in;
        end
 -      else if (add_cnt) begin
-+      else if (!valid_out | valid_in) begin
++      else if (ready_add) begin
            data_out <= data_out + data_in;
        end
     end
- 
-    // Valid output pulse
-    always @(posedge clk or negedge rst_n) begin
-        if(!rst_n) begin
-            valid_out <= 0;
+-
+-   //ready_add: allow new input if not currently outputting or valid_in is high
+-   assign ready_add = !valid_out | valid_in;
 ... (diff truncated)
 ```
 
-#### A''' — gen 12: `merge_control_logic`  (score 101.4, +1.4; area 1.02x depth 1.00x power 1.02x)
+#### A''' — gen 19: `remove_redundant_logic`  (score 101.4, +1.4; area 1.02x depth 1.00x power 1.02x)
 _model: qwen3-235b-a22b-2507_
 
-> The current design uses multiple always blocks and wires (`end_cnt`, `ready_add`) that can be simplified. The key insight is that the condition `!valid_out | valid_in` is repeated in multiple places and can be precomputed to reduce logic depth and area. By merging the control logic into a single inferred condition and removing redundant wire declarations, we reduce the combinational logic overhead
+> The current design uses a `ready_add` signal that is equivalent to `!valid_out | valid_in`. However, `valid_out` is only high for one cycle (when end_cnt is true), and after that, it remains low until the next accumulation completes. This means that once the module starts accepting inputs after a reset or output, `valid_out` is 0, making `ready_add` depend solely on `valid_in` most of the time.
+
+B
 
 ```diff
 --- a/original.sv
 +++ b/original.sv
-@@ -1,60 +1,41 @@
- // EVOLVE-BLOCK-START
+@@ -1,60 +1,63 @@
  `timescale 1ns/1ns
  
  module accu(
@@ -170,50 +169,51 @@ _model: qwen3-235b-a22b-2507_
      output  reg         valid_out     ,
      output  reg [9:0]   data_out
  );
- 
-    reg [1:0] count;
+ // EVOLVE-BLOCK-START
+ reg [1:0] count;
+-   wire ready_add;
 -   wire end_cnt;
-+   wire enable = !valid_out | valid_in;
+-   assign ready_add = !valid_out | valid_in;
+-   assign end_cnt = ready_add && (count == 'd3);
++reg [9:0] data_out_reg;
++reg valid_out_reg;
  
--   // Control signals
--   assign end_cnt = (!valid_out | valid_in) && (count == 'd3);
--
--   // Counter
-+   // Counter and accumulator
-    always @(posedge clk or negedge rst_n) begin
+-   //count: modulo-4 counter with reset on 4th input
+-   always @(posedge clk or negedge rst_n) begin
 -       if(!rst_n) begin
 -          count <= 0;
 -       end
--       else if(end_cnt) begin
--          count <= 0;
--       end
--       else if(!valid_out | valid_in) begin
--          count <= count + 1;
+-       else if(ready_add) begin
+-          if (count == 2'd3) begin
+-             count <= 0;
+-          end else begin
+-             count <= count + 1;
+-          end
 -       end
 -   end
--
--   // Accumulator
++// Combined sequential logic for better synthesis optimization
++always @(posedge clk or negedge rst_n) begin
++    reg ready_add;
++    reg end_cnt;
+ 
+-   //data_out: accumulate 4 input values
 -   always @(posedge clk or negedge rst_n) begin
 -      if(!rst_n) begin
 -        data_out <= 0;
 -      end
--      else if ((!valid_out | valid_in) && count == 0) begin
+-      else if (ready_add && count == 0) begin
 -          data_out <= data_in;
 -      end
--      else if (!valid_out | valid_in) begin
+-      else if (ready_add) begin
 -          data_out <= data_out + data_in;
 -      end
 -   end
--
--   // Valid output pulse
--   always @(posedge clk or negedge rst_n) begin
--       if(!rst_n) begin
-+       if (!rst_n) begin
-+           count <= 0;
-+           data_out <= 0;
-            valid_out <= 0;
--       end
--       else if(end_cnt) begin
--           valid_out <= 1;
++    if (!rst_n) begin
++        count <= 0;
++        data_out_reg <= 0;
++        valid_out_reg <= 0;
++    end else begin
++        // Recompute in each cycle to break combinational loop
++        ready_add = !valid_out_reg | valid_in;
 ... (diff truncated)
 ```

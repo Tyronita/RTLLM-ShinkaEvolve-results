@@ -37,7 +37,7 @@ The equivalence gate is the load-bearing piece: a finite testbench can be overfi
 
 ## Worked example in detail — `adder_8bit` (ripple-carry → Kogge-Stone)
 
-The clearest, fully formally-proven story (best **143.9**: area 0.99×, depth **2.19×**, power 1.37×). Four edges from the reference; full lineage with every diff in **[adder_8bit.md](designs/adder_8bit.md)**.
+The clearest, fully formally-proven story (best **143.9**: area 0.99×, depth **2.19×**, power 1.37×). Four edges from the reference; full lineage with every diff in **[adder_8bit.md](adder_8bit.md)**.
 
 - **A — reference (100):** 8× chained `full_adder` ripple-carry; carry ripples bit-to-bit → long critical path.
 - **A′ — gen 6 (136.8):** collapse to behavioral `assign {cout,sum} = a+b+cin`; depth 1.73×. The synthesizer now picks the adder.
@@ -125,10 +125,6 @@ Best-vs-reference area (blue) and logic-depth (green) for every design, ranked. 
 - **Stronger models in the loop.** This run used 3 mid-tier open models (qwen3-235b, deepseek-v4-flash, gpt-oss-120b) for ~$1. Putting **Claude Opus** in the proposer should reach deeper, provably-equivalent rewrites on the harder datapaths (the dividers, the pipelined/ALU designs that stayed at 100).
 - **Sequential PPA.** Current depth is combinational; adding clock-period/retiming-aware timing would open the pipelined and FSM designs further.
 - **The 47/50 path.** Run `ring_counter` + `asyn_fifo` testbenches through `sv2v` to bring them into the open flow.
-
-## Explore the traces
-
-Interactive tree/code explorer + bundled exemplar DBs: see [`ui/`](ui/README.md). Full per-design lineages under [`designs/`](designs/).
 
 ## Reproduce
 

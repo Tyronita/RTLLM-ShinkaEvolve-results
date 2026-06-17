@@ -1,45 +1,44 @@
-### `div_16bit`  —  category: Arithmetic  —  best PPA **134.9** (area 1.65x · depth 0.78x · power 1.90x)
+### `div_16bit`  —  category: Arithmetic  —  best PPA **136.4** (area 1.66x · depth 0.76x · power 2.01x)
 
 ![trajectory](../figures/div_16bit_trajectory.png) ![axes](../figures/div_16bit_axes.png)
 
-**Evolution path** — 5 edge(s) from the reference (gen 0, score 100) to the best (gen 41, score 134.9):
+**Evolution path** — 5 edge(s) from the reference (gen 0, score 100) to the best (gen 11, score 136.4):
 
 #### A — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 3: `parallel_prefix_division_optimization`  (score 121.0, +21.0; area 1.25x depth 0.94x power 1.51x)
-_model: deepseek-v4-flash_
+#### A' — gen 2: `use_builtin_div`  (score 134.5, +34.5; area 1.63x depth 0.76x power 1.95x)
+_model: gpt-oss-120b_
 
-> The current implementation uses a shift-subtract loop with 32-bit operations and a for loop that synthesizes into a large combinational chain. This results in poor area and timing. We can optimize by:
-1. Using a non-restoring division algorithm that reduces the critical path
-2. Using a smaller datapath width (16-bit instead of 32-bit) since the divisor is only 8-bit
-3. Using a parallel-prefix stru
+> Replace the hand‑written restoring‑division loop with the synthesizable Verilog division (`/`) and modulus (`%`) operators.  The divider is purely combinational, matching the original latency (zero‑cycle).  Modern synthesis tools implement these operators with optimized divider cores that are far smaller and have much lower logic depth than the 16‑iteration shift‑subtract loop that uses 32‑bit tem
 
 ```diff
 --- a/original.sv
 +++ b/original.sv
-@@ -1,40 +1,138 @@
- // EVOLVE-BLOCK-START
+@@ -1,39 +1,20 @@
  module div_16bit(
      input wire [15:0] A,
      input wire [7:0] B,
      output wire [15:0] result,
      output wire [15:0] odd
      );
- 
+ // EVOLVE-BLOCK-START
 -reg [15:0] a_reg;
 -reg [15:0] b_reg;
 -reg [31:0] tmp_a;
 -reg [31:0] tmp_b;
 -integer i;
-+// Non-restoring division with parallel prefix structure
-+// Using 16-bit datapath (divisor is 8-bit, remainder fits in 16 bits)
++/*  Combinational integer division using built‑in operators.
++    Handles divide‑by‑zero by returning zero for both quotient and remainder. */
++wire [15:0] quot;
++wire [15:0] rem;
  
 -always@(*) begin
 -    a_reg = A;
 -    b_reg = B;
 -end
-+wire [15:0] B_ext = {8'b0, B};  // Extend divisor to 16 bits for comparison
++assign quot = (B == 8'd0) ? 16'd0 : A / B;   // 16‑bit quotient
++assign rem = (B == 8'd0) ? 16'd0 : A % B;   // 16‑bit remainder
  
 -always@(*) begin
 -    begin
@@ -56,308 +55,210 @@ _model: deepseek-v4-flash_
 -        end
 -    end
 -end
-+// Stage 0: Start with dividend and zero remainder
-+wire [15:0] r0 = 16'b0;
-+wire [15:0] q0 = A;
- 
+-
 -assign odd = tmp_a[31:16];
 -assign result = tmp_a[15:0];
-+// Generate partial remainders and quotient bits using a binary tree structure
-+// Each stage: shift remainder left, bring in next dividend bit, compare with divisor
-+
-+// Stage 1 (bit 15)
-+wire [15:0] r1_in = {r0[14:0], A[15]};
-+wire [15:0] r1_sub = r1_in - B_ext;
-+wire r1_ge = (r1_in >= B_ext);
-+wire [15:0] r1 = r1_ge ? r1_sub : r1_in;
-+wire q1 = r1_ge;
-+
-+// Stage 2 (bit 14)
-+wire [15:0] r2_in = {r1[14:0], A[14]};
-+wire [15:0] r2_sub = r2_in - B_ext;
-+wire r2_ge = (r2_in >= B_ext);
-... (diff truncated)
++assign result = quot;
++assign odd    = rem;
+ 
+ endmodule
+ // EVOLVE-BLOCK-END
 ```
 
-#### A'' — gen 4: `parallel_prefix_divider_optimized`  (score 121.0, +0.0; area 1.25x depth 0.94x power 1.51x)
+#### A'' — gen 3: `compact_divider_optimization`  (score 134.5, +0.0; area 1.63x depth 0.76x power 1.95x)
 _model: deepseek-v4-flash_
 
-> This implementation combines the best aspects of both approaches: the parallel-prefix structure from the second implementation (which reduces area and power by avoiding the 32-bit shift register) with the correct non-restoring division algorithm. The key insight is that the second implementation's unrolled stages are actually performing a correct non-restoring division, but the quotient bit orderi
+> Optimize the divider by using a more compact implementation that directly computes quotient and remainder using Verilog's built-in division operators, with proper zero-division handling. This reduces area by eliminating intermediate wire declarations and using more efficient logic structure. The implementation maintains the same functionality while being more area-efficient.
 
 ```diff
 --- a/original.sv
 +++ b/original.sv
-@@ -1,138 +1,139 @@
- // EVOLVE-BLOCK-START
+@@ -1,20 +1,15 @@
  module div_16bit(
      input wire [15:0] A,
      input wire [7:0] B,
      output wire [15:0] result,
      output wire [15:0] odd
      );
- 
- // Non-restoring division with parallel prefix structure
- // Using 16-bit datapath (divisor is 8-bit, remainder fits in 16 bits)
-+// Corrected: MSB-first quotient bit ordering
- 
- wire [15:0] B_ext = {8'b0, B};  // Extend divisor to 16 bits for comparison
- 
- // Stage 0: Start with dividend and zero remainder
- wire [15:0] r0 = 16'b0;
- wire [15:0] q0 = A;
- 
- // Generate partial remainders and quotient bits using a binary tree structure
- // Each stage: shift remainder left, bring in next dividend bit, compare with divisor
- 
--// Stage 1 (bit 15)
-+// Stage 1 (bit 15 - MSB)
- wire [15:0] r1_in = {r0[14:0], A[15]};
- wire [15:0] r1_sub = r1_in - B_ext;
- wire r1_ge = (r1_in >= B_ext);
- wire [15:0] r1 = r1_ge ? r1_sub : r1_in;
- wire q1 = r1_ge;
- 
- // Stage 2 (bit 14)
- wire [15:0] r2_in = {r1[14:0], A[14]};
- wire [15:0] r2_sub = r2_in - B_ext;
- wire r2_ge = (r2_in >= B_ext);
- wire [15:0] r2 = r2_ge ? r2_sub : r2_in;
- wire q2 = r2_ge;
- 
- // Stage 3 (bit 13)
- wire [15:0] r3_in = {r2[14:0], A[13]};
- wire [15:0] r3_sub = r3_in - B_ext;
- wire r3_ge = (r3_in >= B_ext);
- wire [15:0] r3 = r3_ge ? r3_sub : r3_in;
- wire q3 = r3_ge;
- 
- // Stage 4 (bit 12)
- wire [15:0] r4_in = {r3[14:0], A[12]};
- wire [15:0] r4_sub = r4_in - B_ext;
- wire r4_ge = (r4_in >= B_ext);
- wire [15:0] r4 = r4_ge ? r4_sub : r4_in;
- wire q4 = r4_ge;
- 
- // Stage 5 (bit 11)
- wire [15:0] r5_in = {r4[14:0], A[11]};
- wire [15:0] r5_sub = r5_in - B_ext;
- wire r5_ge = (r5_in >= B_ext);
- wire [15:0] r5 = r5_ge ? r5_sub : r5_in;
- wire q5 = r5_ge;
- 
-... (diff truncated)
-```
-
-#### A''' — gen 5: `unroll_with_optimized_compare`  (score 131.0, +10.0; area 1.65x depth 0.77x power 1.77x)
-_model: qwen3-235b-a22b-2507_
-
-> The current design unrolls the division loop into 16 sequential stages, which exposes parallelism but creates a long combinational path due to 16 cascaded 16-bit comparisons and subtractions. This leads to high logic depth (359) despite area and power improvements.
-
-Instead of performing full 16-bit comparisons and conditional subtractions at each stage, we can optimize by:
-1. Using a 16-bit subtr
-
-```diff
---- a/original.sv
-+++ b/original.sv
-@@ -1,139 +1,139 @@
  // EVOLVE-BLOCK-START
- module div_16bit(
-     input wire [15:0] A,
-     input wire [7:0] B,
-     output wire [15:0] result,
-     output wire [15:0] odd
-     );
- 
- // Non-restoring division with parallel prefix structure
- // Using 16-bit datapath (divisor is 8-bit, remainder fits in 16 bits)
- // Corrected: MSB-first quotient bit ordering
- 
- wire [15:0] B_ext = {8'b0, B};  // Extend divisor to 16 bits for comparison
- 
- // Stage 0: Start with dividend and zero remainder
- wire [15:0] r0 = 16'b0;
- wire [15:0] q0 = A;
- 
- // Generate partial remainders and quotient bits using a binary tree structure
- // Each stage: shift remainder left, bring in next dividend bit, compare with divisor
- 
- // Stage 1 (bit 15 - MSB)
- wire [15:0] r1_in = {r0[14:0], A[15]};
- wire [15:0] r1_sub = r1_in - B_ext;
--wire r1_ge = (r1_in >= B_ext);
-+wire r1_ge = !r1_sub[15];  // Since r1_in and B_ext are positive, r1_in >= B_ext iff (r1_in - B_ext) >= 0
- wire [15:0] r1 = r1_ge ? r1_sub : r1_in;
- wire q1 = r1_ge;
- 
- // Stage 2 (bit 14)
- wire [15:0] r2_in = {r1[14:0], A[14]};
- wire [15:0] r2_sub = r2_in - B_ext;
--wire r2_ge = (r2_in >= B_ext);
-+wire r2_ge = !r2_sub[15];
- wire [15:0] r2 = r2_ge ? r2_sub : r2_in;
- wire q2 = r2_ge;
- 
- // Stage 3 (bit 13)
- wire [15:0] r3_in = {r2[14:0], A[13]};
- wire [15:0] r3_sub = r3_in - B_ext;
--wire r3_ge = (r3_in >= B_ext);
-+wire r3_ge = !r3_sub[15];
- wire [15:0] r3 = r3_ge ? r3_sub : r3_in;
- wire q3 = r3_ge;
- 
- // Stage 4 (bit 12)
- wire [15:0] r4_in = {r3[14:0], A[12]};
- wire [15:0] r4_sub = r4_in - B_ext;
--wire r4_ge = (r4_in >= B_ext);
-+wire r4_ge = !r4_sub[15];
- wire [15:0] r4 = r4_ge ? r4_sub : r4_in;
- wire q4 = r4_ge;
- 
- // Stage 5 (bit 11)
- wire [15:0] r5_in = {r4[14:0], A[11]};
- wire [15:0] r5_sub = r5_in - B_ext;
--wire r5_ge = (r5_in >= B_ext);
-... (diff truncated)
-```
-
-#### A'''' — gen 27: `carry_select_division_optimization`  (score 131.0, +0.0; area 1.65x depth 0.77x power 1.77x)
-_model: qwen3-235b-a22b-2507_
-
-> The current implementation uses a linear sequence of 16 identical stages, each performing a subtraction and conditional selection. This creates a long combinational path (depth 437) due to the ripple of remainder signals through each stage. 
-
-The key insight is that we can reduce critical path delay by using a carry-select-like structure for the subtraction logic. However, since each stage depends
-
-```diff
---- a/original.sv
-+++ b/original.sv
-@@ -1,139 +1,45 @@
- // EVOLVE-BLOCK-START
- module div_16bit(
-     input wire [15:0] A,
-     input wire [7:0] B,
-     output wire [15:0] result,
-     output wire [15:0] odd
-     );
- 
--// Non-restoring division with parallel prefix structure
--// Using 16-bit datapath (divisor is 8-bit, remainder fits in 16 bits)
--// Corrected: MSB-first quotient bit ordering
-+// Non-restoring division using generate block for synthesis optimization
-+// Using 16-bit remainder path with MSB-first processing
-+// This allows synthesis tools to better optimize the chain
- 
--wire [15:0] B_ext = {8'b0, B};  // Extend divisor to 16 bits for comparison
-+wire [15:0] B_ext = {8'b0, B};  // Extend divisor to 16 bits
- 
--// Stage 0: Start with dividend and zero remainder
--wire [15:0] r0 = 16'b0;
--wire [15:0] q0 = A;
-+// Declare signals for each stage using arrays
-+wire [15:0] r_in [16];
-+wire [15:0] r_sub [16];
-+wire       r_ge  [16];
-+wire [15:0] r    [16];
-+wire       q_bit [16];
- 
--// Generate partial remainders and quotient bits using a binary tree structure
-+// Stage 0: initial remainder is zero
-+assign r_in[0] = {15'b0, A[15]};
-+assign r[0] = r_ge[0] ? r_sub[0] : r_in[0];
-+
-+// Generate the 16 stages using for-loop in generate block
- // Each stage: shift remainder left, bring in next dividend bit, compare with divisor
-+genvar i;
-+generate
-+    for (i = 0; i < 16; i = i + 1) begin : div_stage
-+        assign r_in[i] = (i == 0) ? {15'b0, A[15]} : {r[i-1][14:0], A[15-i]};
-+        assign r_sub[i] = r_in[i] - B_ext;
-+        assign r_ge[i] = !r_sub[i][15];
-+        assign r[i] = r_ge[i] ? r_sub[i] : r_in[i];
-+        assign q_bit[i] = r_ge[i];
-+    end
-+endgenerate
- 
--// Stage 1 (bit 15 - MSB)
--wire [15:0] r1_in = {r0[14:0], A[15]};
--wire [15:0] r1_sub = r1_in - B_ext;
--wire r1_ge = !r1_sub[15];  // Since r1_in and B_ext are positive, r1_in >= B_ext iff (r1_in - B_ext) >= 0
--wire [15:0] r1 = r1_ge ? r1_sub : r1_in;
--wire q1 = r1_ge;
+-/*  Combinational integer division using built‑in operators.
+-    Handles divide‑by‑zero by returning zero for both quotient and remainder. */
+-wire [15:0] quot;
+-wire [15:0] rem;
 -
--// Stage 2 (bit 14)
--wire [15:0] r2_in = {r1[14:0], A[14]};
--wire [15:0] r2_sub = r2_in - B_ext;
--wire r2_ge = !r2_sub[15];
-... (diff truncated)
+-assign quot = (B == 8'd0) ? 16'd0 : A / B;   // 16‑bit quotient
+-assign rem = (B == 8'd0) ? 16'd0 : A % B;   // 16‑bit remainder
+-
+-assign result = quot;
+-assign odd    = rem;
++/*  Optimized combinational integer division.
++    Uses built‑in operators with zero‑division protection.
++    Directly assigns outputs to save area. */
++assign result = (B == 8'd0) ? 16'd0 : A / B;
++assign odd    = (B == 8'd0) ? 16'd0 : A % B;
+ 
+ endmodule
+ // EVOLVE-BLOCK-END
 ```
 
-#### A''''' — gen 41: `compact_non_restoring_divider`  (score 134.9, +3.9; area 1.65x depth 0.78x power 1.90x)
+#### A''' — gen 8: `use_conditional_divider_with_shift_optimization`  (score 120.4, -14.1; area 1.22x depth 0.95x power 1.50x)
 _model: qwen3-235b-a22b-2507_
 
-> The current design uses a generate loop to unroll 16 stages of non-restoring division, which leads to significant area and power overhead due to duplicated subtractors and wide comparators. While this enables combinational logic, it results in high depth from long carry chains.
-
-We replace the per-stage subtraction with a more compact, functionally equivalent structure: instead of computing r_sub[
+> The current implementation uses built-in division and modulo operators which, while concise, can lead to suboptimal synthesis results in terms of delay and area due to the complexity of general division logic. Instead, we can take advantage of the fact that the divisor is only 8-bit and the dividend is 16-bit — a fixed, small size — to implement a more efficient, unrolled non-restoring or restorin
 
 ```diff
 --- a/original.sv
 +++ b/original.sv
-@@ -1,45 +1,41 @@
- // EVOLVE-BLOCK-START
+@@ -1,15 +1,48 @@
  module div_16bit(
      input wire [15:0] A,
      input wire [7:0] B,
      output wire [15:0] result,
      output wire [15:0] odd
      );
+ // EVOLVE-BLOCK-START
+-/*  Optimized combinational integer division.
+-    Uses built‑in operators with zero‑division protection.
+-    Directly assigns outputs to save area. */
+-assign result = (B == 8'd0) ? 16'd0 : A / B;
+-assign odd    = (B == 8'd0) ? 16'd0 : A % B;
++/*  High-efficiency unrolled 16x8 combinational division.
++    Fully combinational, unrolled 16-bit division by 8-bit divisor.
++    Minimizes synthesized logic depth and area via explicit bit-stepping. */
++reg [15:0] div_result;
++reg [15:0] div_remainder;
++
++always @(*) begin
++    if (B == 8'd0) begin
++        div_result    = 16'd0;
++        div_remainder = 16'd0;
++    end else begin
++        reg [15:0] Q;
++        reg [16:0] R;
++        reg [15:0] B_ext;
++        integer i;
++
++        B_ext = {8'd0, B};  // Zero-extended divisor to 16 bits
++        R = 17'd0;
++        Q = 16'd0;
++
++        // Unrolled non-restoring division for 16 bits
++        for (i = 15; i >= 0; i = i - 1) begin
++            R = {R[15:0], A[i]};  // Left shift and bring in next bit
++            if (R >= {1'b0, B_ext}) begin
++                R = R - {1'b0, B_ext};
++                Q[i] = 1'b1;
++            end else begin
++                Q[i] = 1'b0;
++            end
++        end
++
++        div_result = Q;
++        div_remainder = R[15:0];
++    end
++end
++
++assign result = div_result;
++assign odd = div_remainder;
  
--// Non-restoring division using generate block for synthesis optimization
--// Using 16-bit remainder path with MSB-first processing
--// This allows synthesis tools to better optimize the chain
-+// Compact non-restoring division using optimized carry computation
-+// Eliminates redundant logic and uses unified generate block
+ endmodule
+ // EVOLVE-BLOCK-END
+```
+
+#### A'''' — gen 9: `use_builtin_ops_for_division`  (score 134.5, +14.1; area 1.63x depth 0.76x power 1.95x)
+_model: qwen3-235b-a22b-2507_
+
+> The current implementation uses an unrolled non-restoring division algorithm with a loop synthesized into combinational logic. While this gives fine-grained control, modern synthesis tools can optimize built-in `/` and `%` operators more effectively, especially for fixed-width operands like 16-bit / 8-bit. The prior implementations showed that using built-in operators yields lower area, depth, and
+
+```diff
+--- a/original.sv
++++ b/original.sv
+@@ -1,48 +1,15 @@
+ module div_16bit(
+     input wire [15:0] A,
+     input wire [7:0] B,
+     output wire [15:0] result,
+     output wire [15:0] odd
+     );
+ // EVOLVE-BLOCK-START
+-/*  High-efficiency unrolled 16x8 combinational division.
+-    Fully combinational, unrolled 16-bit division by 8-bit divisor.
+-    Minimizes synthesized logic depth and area via explicit bit-stepping. */
+-reg [15:0] div_result;
+-reg [15:0] div_remainder;
+-
+-always @(*) begin
+-    if (B == 8'd0) begin
+-        div_result    = 16'd0;
+-        div_remainder = 16'd0;
+-    end else begin
+-        reg [15:0] Q;
+-        reg [16:0] R;
+-        reg [15:0] B_ext;
+-        integer i;
+-
+-        B_ext = {8'd0, B};  // Zero-extended divisor to 16 bits
+-        R = 17'd0;
+-        Q = 16'd0;
+-
+-        // Unrolled non-restoring division for 16 bits
+-        for (i = 15; i >= 0; i = i - 1) begin
+-            R = {R[15:0], A[i]};  // Left shift and bring in next bit
+-            if (R >= {1'b0, B_ext}) begin
+-                R = R - {1'b0, B_ext};
+-                Q[i] = 1'b1;
+-            end else begin
+-                Q[i] = 1'b0;
+-            end
+-        end
+-
+-        div_result = Q;
+-        div_remainder = R[15:0];
+-    end
+-end
+-
+-assign result = div_result;
+-assign odd = div_remainder;
++/*  Optimized combinational division using built-in operators.
++    Leverages synthesis tool optimization for / and % operations.
++    Handles divide-by-zero by returning zero. */
++assign result = (B == 8'd0) ? 16'd0 : A / B;
++assign odd    = (B == 8'd0) ? 16'd0 : A % B;
  
- wire [15:0] B_ext = {8'b0, B};  // Extend divisor to 16 bits
+ endmodule
+ // EVOLVE-BLOCK-END
+```
+
+#### A''''' — gen 11: `use_conditional_divider_optimization`  (score 136.4, +1.8; area 1.66x depth 0.76x power 2.01x)
+_model: qwen3-235b-a22b-2507_
+
+> The current implementation correctly uses built-in operators for division and remainder, which allows synthesis tools to apply aggressive optimizations. However, the conditional (ternary) operator introduces a multiplexer for both quotient and remainder paths, which adds area and delay due to control logic replication.
+
+Instead of using a conditional that selects between zero and the result of A/B
+
+```diff
+--- a/original.sv
++++ b/original.sv
+@@ -1,15 +1,16 @@
+ module div_16bit(
+     input wire [15:0] A,
+     input wire [7:0] B,
+     output wire [15:0] result,
+     output wire [15:0] odd
+     );
+ // EVOLVE-BLOCK-START
+-/*  Optimized combinational division using built-in operators.
+-    Leverages synthesis tool optimization for / and % operations.
+-    Handles divide-by-zero by returning zero. */
+-assign result = (B == 8'd0) ? 16'd0 : A / B;
+-assign odd    = (B == 8'd0) ? 16'd0 : A % B;
++/*  Optimized combinational division with shared zero detection.
++    Shared compare reduces duplicated logic for divide-by-zero handling.
++    Improves area and power by minimizing redundant comparisons. */
++wire zero_detect = (B == 8'd0);
++assign result = zero_detect ? 16'd0 : A / B;
++assign odd    = zero_detect ? 16'd0 : A % B;
  
--// Declare signals for each stage using arrays
--wire [15:0] r_in [16];
--wire [15:0] r_sub [16];
--wire       r_ge  [16];
--wire [15:0] r    [16];
--wire       q_bit [16];
-+// Shared signals for all stages
-+wire [15:0] rem [0:16];
-+wire        q_bit[16];
- 
--// Stage 0: initial remainder is zero
--assign r_in[0] = {15'b0, A[15]};
--assign r[0] = r_ge[0] ? r_sub[0] : r_in[0];
-+// Initial remainder
-+assign rem[0] = 16'b0;
- 
--// Generate the 16 stages using for-loop in generate block
--// Each stage: shift remainder left, bring in next dividend bit, compare with divisor
-+// Generate 16 division stages with optimized subtractor
- genvar i;
- generate
-     for (i = 0; i < 16; i = i + 1) begin : div_stage
--        assign r_in[i] = (i == 0) ? {15'b0, A[15]} : {r[i-1][14:0], A[15-i]};
--        assign r_sub[i] = r_in[i] - B_ext;
--        assign r_ge[i] = !r_sub[i][15];
--        assign r[i] = r_ge[i] ? r_sub[i] : r_in[i];
--        assign q_bit[i] = r_ge[i];
-+        wire [15:0] r_in = {rem[i][14:0], A[15-i]};
-+        wire [15:0] diff = r_in + (~B_ext) + 1;  // Two's complement subtraction
-+        wire r_ge = !diff[15];
-+        assign rem[i+1] = r_ge ? diff : r_in;
-+        assign q_bit[i] = r_ge;
-     end
- endgenerate
- 
--// Assemble quotient (MSB first: q_bit[0] is MSB, q_bit[15] is LSB)
--assign result = {q_bit[0], q_bit[1], q_bit[2], q_bit[3], q_bit[4], q_bit[5], q_bit[6], q_bit[7],
--                 q_bit[8], q_bit[9], q_bit[10], q_bit[11], q_bit[12], q_bit[13], q_bit[14], q_bit[15]};
--assign odd = r[15];
-+// Output assignments
-+assign result = {q_bit[0], q_bit[1], q_bit[2], q_bit[3],
-... (diff truncated)
+ endmodule
+ // EVOLVE-BLOCK-END
 ```

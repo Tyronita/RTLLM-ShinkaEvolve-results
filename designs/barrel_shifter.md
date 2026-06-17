@@ -2,29 +2,28 @@
 
 ![trajectory](../figures/barrel_shifter_trajectory.png) ![axes](../figures/barrel_shifter_axes.png)
 
-**Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 4, score 101.4):
+**Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 1, score 101.4):
 
 #### A — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 4: `barrel_shifter_structural_to_behavioral`  (score 101.4, +1.4; area 1.02x depth 1.10x power 0.93x)
-_model: qwen3-235b-a22b-2507_
+#### A' — gen 1: `barrel_shifter_optimization`  (score 101.4, +1.4; area 1.02x depth 1.10x power 0.93x)
+_model: deepseek-v4-flash_
 
-> The current implementation uses a structural approach with multiple instantiations of 2:1 multiplexers to perform the shifting at each stage (4-bit, 2-bit, and 1-bit shifts). While this is functionally correct, it results in a large number of gates and high logic depth due to cascaded mux stages.
-
-We can significantly reduce area, depth, and power by replacing the entire structural mux network wit
+> The current implementation uses a hierarchical mux structure with explicit mux2X1 modules, which is suboptimal for area and timing. We can replace this with a more efficient barrel shifter using a single assign statement with a shift operator, which synthesizes to a much smaller and faster circuit. The shift amount is determined by ctrl[2:0], and we need to implement a rotate-right (since the orig
 
 ```diff
 --- a/original.sv
 +++ b/original.sv
-@@ -1,47 +1,12 @@
- // EVOLVE-BLOCK-START
+@@ -1,48 +1,12 @@
  module barrel_shifter (in, ctrl, out);
+ 
    input  [7:0] in;
    input [2:0] ctrl;
    output [7:0] out;
--  wire [7:0] x,y;
- 
+ // EVOLVE-BLOCK-START
+-wire [7:0] x,y;
+-
 -//4bit shift right
 -mux2X1  ins_17 (.in0(in[7]),.in1(1'b0),.sel(ctrl[2]),.out(x[7]));
 -mux2X1  ins_16 (.in0(in[6]),.in1(1'b0),.sel(ctrl[2]),.out(x[6]));
@@ -55,9 +54,9 @@ We can significantly reduce area, depth, and power by replacing the entire struc
 -mux2X1  ins_02 (.in0(y[2]),.in1(y[3]),.sel(ctrl[0]),.out(out[2]));
 -mux2X1  ins_01 (.in0(y[1]),.in1(y[2]),.sel(ctrl[0]),.out(out[1]));
 -mux2X1  ins_00 (.in0(y[0]),.in1(y[1]),.sel(ctrl[0]),.out(out[0]));
-+  // Perform logical right shift by ctrl bits
-+  // Equivalent to the original 3-stage mux-based barrel shifter
-+  assign out = in >> ctrl;
++// Direct shift-right implementation using behavioral operator
++// This synthesizes to a compact barrel shifter with minimal area and depth
++assign out = in >> ctrl;
  
  endmodule
 -
