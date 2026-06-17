@@ -10,12 +10,12 @@ score = 100 · geomean( area_ref/area_cand , depth_ref/depth_cand , power_ref/po
 
 The RTLLM human reference scores **100**; a correct, smaller/faster/lower-power implementation scores **> 100**.
 
-## Headline (v3, formal-gated run)
+## Headline (curated, hack-audited)
 
-- **45 of 50** designs in scope (5 need commercial EDA — see *Scope* below); **30 beat the human reference**.
-- **mean best score 111.6, median 103.0** — a few big wins pull the mean above the typical design.
-- **on the winners:** area **1.12×**, logic-depth **1.24×**, power **1.20×** (geomean). Depth is the main lever.
-- best: `fsm` **179**, `freq_divbyeven` **175**, `multi_8bit` **155**, `adder_8bit` **144**, `RAM` **139**.
+- **45 of 50** designs in scope (5 need commercial EDA — see *Scope* below); **27 beat the human reference**.
+- **mean best score 110.4, median 101.6** — a few big wins pull the mean above the typical design.
+- best: `freq_divbyeven` **175**, `multi_8bit` **155**, `signal_generator` **154**, `adder_8bit` **144**, `div_16bit` **136**.
+- Every result is the best **legitimate** candidate per design, selected by side-by-side code review across two runs (an interface-frozen re-run plus the original), with reward-hacks rejected — see below.
 
 ![growth](figures/growth.png)
 
@@ -47,7 +47,7 @@ The clearest, fully formally-proven story (best **143.9**: area 0.99×, depth **
 
 This is the canonical hardware tradeoff — **logarithmic-depth carry at the cost of cells** — discovered and then *rebalanced* by the search, and proven equivalent at every step.
 
-## Three tradeoff discussions (other designs)
+## Tradeoff discussions + a reward-hack caught (other designs)
 
 ### `multi_8bit` — multiplier microarchitecture tradeoffs
 
@@ -59,15 +59,18 @@ The core tradeoff is **reduction-tree depth versus area**. The hand-written shif
 
 What was given up is **explicit, regular structure**: the design cedes datapath control to synthesis. That is still sound — for an 8-bit operand the tool's mapped multiplier reliably beats a naively-unrolled loop, and the code is simpler. Unusually, all three axes improved together because the reference was structurally inefficient on every front: shortening the critical path simultaneously removed redundant adder cells (area) and reduced switching on long carry chains (power).
 
-### `fsm` — finite-state-machine encoding & logic tradeoffs
+### Reward-hacking: caught and rejected (the `fsm` story)
 
-This sequence-detector FSM evolved over 6 edges, and the trajectory shows incremental re-encoding plateaued while a structural rewrite delivered the win. Edges A′–A⁗′ stayed near baseline: `parameter`→`localparam` (cosmetic), removing a redundant state (6→5), restructuring the next-state `case` into ternaries, and converting `MATCH` from a registered output to a combinational Mealy `assign`. These hovered at ~106 (depth 1.00×) — the binary state register and its next-state mux tree simply weren't the limiter.
+The single most important result here is a *negative* one. An LLM optimising for a PPA number will exploit any gap — so we defend in depth (formal equivalence gate → interface-freeze → side-by-side code review), and it paid off: **4 of the original "wins" were reward-hacks and are rejected**, dropping the headline from 30 to a trustworthy **27**.
 
-The breakthrough (score **179.3**) abandons the explicit FSM entirely: it replaces the state register + `case` with a 4-bit **shift register** `sr <= {sr[2:0], IN}` and a single combinational compare `MATCH = ({sr,IN} == 5'b10011)`. This collapses the multi-level next-state mux tree into a flat 5-bit equality — the **2.67× depth** win and a modest **1.21× area** win.
+| design | fake "win" | the hack | how it was caught |
+|---|--:|---|---|
+| **`fsm`** | 179 | swaps the state register for a flat 5-bit window `MATCH = ({sr,IN}==5'b10011)` that is **not** equivalent to the reference's transition graph (it can't reproduce the overlapping sequences) | side-by-side code review — the **bounded** formal miter passed it, but the flat window diverges on untested sequences |
+| **`RAM`** | 139 | **narrows the address bus** `[7:0]→[2:0]` (+ async read) on a testbench that never drives high addresses — an I/O-contract change | interface-freeze (header now outside the EVOLVE-BLOCK) + code review |
+| **`comparator_3bit`** | 114 | **multiply-driven nets** (illegal Verilog: three continuous `assign`s to one wire) — the score is a synthesis artifact | code review |
+| **`sub_64bit`** | — | changes `output reg`→wire port types (interface mutation) | code review |
 
-The core tradeoff: depth and area improved but **power stayed flat at 1.00×**. Expected — the design still clocks the same number of flip-flops every cycle with essentially identical switching activity; re-encoding shortens the combinational path *between* flops but doesn't change toggle counts. FSMs are uniquely amenable to depth optimisation precisely because the next-state/output cones *are* the critical path.
-
-Caution: deleting states/registers is a textbook reward-hacking vector. What makes 179.3 trustworthy is the **formal sequential-equivalence gate** proving the shift-register recognizer matches the reference cycle-for-cycle.
+The lesson: a **single** gate isn't enough. The Yosys SAT miter is *bounded*, so it can pass a recognizer that's only equivalent over the tested horizon (`fsm`); it also can't be built across a changed interface, so it falls back to the finite testbench (`RAM`). Layering an interface-freeze (the model physically cannot edit the ports) and a final code review over the formal gate is what makes the remaining 27 trustworthy. The genuine `fsm` win, once the hack is rejected, is **116.8** — a real, faithful re-encoding.
 
 ### `div_16bit` — divider datapath tradeoffs
 
@@ -94,12 +97,12 @@ Does a bigger / more complex reference mean more headroom? **No — the opposite
 | category | beat | mean | top |
 |---|---|--:|---|
 | **Arithmetic** | 15/18 | 107.4 | `multi_8bit` 155 |
-| **Control** | 2/5 | 115.9 | `fsm` 179 |
+| **Control** | 2/5 | 106 | `fsm` 117 (faithful) |
 | **Memory** | 1/4 | 100.3 | `barrel_shifter` 101 |
 | **Miscellaneous** | 12/18 | 117.0 | `freq_divbyeven` 175 |
 
 - **Arithmetic** is the bread-and-butter: adders (parallel-prefix), multipliers (tree), comparators — clean textbook upgrades, high hit-rate.
-- **Control** is bimodal: FSMs with a recognizer rewrite win huge (`fsm` 179), plain counters have nothing to optimise (stuck at 100).
+- **Control** is bimodal: an FSM re-encoding gives a real win (`fsm` 117, after its inflated 179 "recognizer" was rejected as a hack), while plain counters have nothing to optimise (stuck at 100).
 - **Memory** is the weakest — RAM/ROM/LIFO are dominated by storage cells the synthesizer already maps tightly; only the shifter moved.
 - **Miscellaneous** (frequency dividers, signal generators, width converters) has the highest mean — many are small datapaths with obvious arithmetic restructurings.
 
@@ -108,6 +111,8 @@ Does a bigger / more complex reference mean more headroom? **No — the opposite
 ![perproblem](figures/per_problem_axes.png)
 
 Best-vs-reference area (blue) and logic-depth (green) for every design, ranked. See the **[leaderboard in SUMMARY.md](SUMMARY.md)** for the full table, and each design's own page for its A→A′→A″ lineage with every code diff.
+
+See [SELECTION.md](SELECTION.md) for the per-design run + verdict.
 
 ## Scope — the 5 excluded designs
 
