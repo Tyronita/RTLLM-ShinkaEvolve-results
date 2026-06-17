@@ -4,10 +4,10 @@
 
 **Evolution path** — 5 edge(s) from the reference (gen 0, score 100) to the best (gen 38, score 153.9):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 3: `state_reduction_and_logic_simplification`  (score 124.4, +24.4; area 1.19x depth 0.89x power 1.81x)
+#### A2 — gen 3: `state_reduction_and_logic_simplification`  (score 124.4, +24.4; area 1.19x depth 0.89x power 1.81x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses a 2-bit state register (`[1:0]`) but only two out of four possible states are used: 2'b00 (increment) and 2'b01 (decrement). The upper state bit is always 0, making it redundant. We can reduce the state to a single bit, where:
@@ -73,7 +73,7 @@ This reduces register area and simplifies the logic in the case statement. Addit
  // EVOLVE-BLOCK-END
 ```
 
-#### A'' — gen 19: `optimize_triangle_wave`  (score 124.4, +0.0; area 1.19x depth 0.89x power 1.81x)
+#### A3 — gen 19: `optimize_triangle_wave`  (score 124.4, +0.0; area 1.19x depth 0.89x power 1.81x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses a state register and separate wave register with conditional increment/decrement. This can be optimized by using a single counter register that toggles direction based on reaching boundaries, which reduces the number of flip-flops and combinational logic. The key insight is that the state transition can be combined with the counter update in a single always block, a
@@ -133,7 +133,7 @@ _model: deepseek-v4-flash_
  // EVOLVE-BLOCK-END
 ```
 
-#### A''' — gen 22: `none`  (score 147.4, +23.0; area 1.47x depth 2.00x power 1.09x)
+#### A4 — gen 22: `none`  (score 147.4, +23.0; area 1.47x depth 2.00x power 1.09x)
 _model: qwen3-235b-a22b-2507_
 
 > Key parameters changed:
@@ -196,7 +196,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'''' — gen 28: `none`  (score 147.3, -0.1; area 1.47x depth 2.00x power 1.09x)
+#### A5 — gen 28: `none`  (score 147.3, -0.1; area 1.47x depth 2.00x power 1.09x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation uses a 6-bit free-running counter and a mux-based reflection (using the 6th bit) to generate a 5-bit triangle wave. While already efficient, we can further improve area, depth, and power by:
@@ -236,7 +236,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A''''' — gen 38: `optimized-triangle-gen`  (score 153.9, +6.5; area 1.46x depth 2.29x power 1.09x)
+#### A6 — gen 38: `optimized-triangle-gen`  (score 153.9, +6.5; area 1.46x depth 2.29x power 1.09x)
 _model: deepseek-v4-flash_
 
 > I provide two alternative implementations that maintain functional equivalence while optimizing for area/depth/power. The first uses a free-running 5-bit counter and a toggle direction bit (simpler than 6-bit), and the second uses a 5-bit binary counter feeding a LUT-like arrangement that creates the triangle wave without extra state. Both are formally proven equivalent to the reference.

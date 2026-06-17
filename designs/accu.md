@@ -4,10 +4,10 @@
 
 **Evolution path** — 3 edge(s) from the reference (gen 0, score 100) to the best (gen 12, score 101.4):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 4: `accu_optimized`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
+#### A2 — gen 4: `accu_optimized`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
 _model: deepseek-v4-flash_
 
 > Removed redundant register and simplified control logic to match the reference implementation, achieving minimal area and power. Uses a single accumulator register.
@@ -76,7 +76,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A'' — gen 11: `reduce_logic_depth_with_direct_count_check`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
+#### A3 — gen 11: `reduce_logic_depth_with_direct_count_check`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses a multi-step control path: `ready_add` → `add_cnt` → `end_cnt`, with `end_cnt` depending on both `ready_add` and `count==3`. This creates unnecessary logic depth due to the intermediate wire assignments and redundant conditions.
@@ -149,7 +149,7 @@ We can reduce logic depth and area by:
 ... (diff truncated)
 ```
 
-#### A''' — gen 12: `merge_control_logic`  (score 101.4, +1.4; area 1.02x depth 1.00x power 1.02x)
+#### A4 — gen 12: `merge_control_logic`  (score 101.4, +1.4; area 1.02x depth 1.00x power 1.02x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses multiple always blocks and wires (`end_cnt`, `ready_add`) that can be simplified. The key insight is that the condition `!valid_out | valid_in` is repeated in multiple places and can be precomputed to reduce logic depth and area. By merging the control logic into a single inferred condition and removing redundant wire declarations, we reduce the combinational logic overhead

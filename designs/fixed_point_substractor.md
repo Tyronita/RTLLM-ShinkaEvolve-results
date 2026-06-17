@@ -4,10 +4,10 @@
 
 **Evolution path** — 5 edge(s) from the reference (gen 0, score 100) to the best (gen 47, score 111.7):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 11: `parallel_prefix_subtractor`  (score 105.8, +5.8; area 0.90x depth 0.98x power 1.35x)
+#### A2 — gen 11: `parallel_prefix_subtractor`  (score 105.8, +5.8; area 0.90x depth 0.98x power 1.35x)
 _model: deepseek-v4-flash_
 
 > Replace the original combinational subtraction logic with a parallel-prefix (Kogge-Stone) adder-based subtractor. The current implementation uses ripple-carry subtraction with multiple conditional branches, which has O(N) logic depth. By using a Kogge-Stone prefix structure, we reduce the critical path to O(log N) while maintaining exact functional equivalence. The subtraction a - b is computed as
@@ -76,7 +76,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A'' — gen 33: `none`  (score 110.9, +5.1; area 1.28x depth 1.09x power 0.97x)
+#### A3 — gen 33: `none`  (score 110.9, +5.1; area 1.28x depth 1.09x power 0.97x)
 _model: qwen3-235b-a22b-2507_
 
 > none
@@ -145,7 +145,7 @@ _model: qwen3-235b-a22b-2507_
 ... (diff truncated)
 ```
 
-#### A''' — gen 35: `unify_cin_generation`  (score 111.4, +0.5; area 1.24x depth 1.15x power 0.97x)
+#### A4 — gen 35: `unify_cin_generation`  (score 111.4, +0.5; area 1.24x depth 1.15x power 0.97x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design computes `cin` using a conditional assignment: `same_sign ? 1'b1 : 1'b0`. This creates a mux that adds unnecessary logic depth and area. However, observe that in two's complement arithmetic, subtraction is implemented as addition with inverted subtrahend and a carry-in of 1. 
@@ -205,7 +205,7 @@ But more importantly — we can recognize that `cin = same_sign` is logically eq
  // EVOLVE-BLOCK-END
 ```
 
-#### A'''' — gen 46: `unified_sign_mag_sub`  (score 111.5, +0.1; area 1.28x depth 1.09x power 0.99x)
+#### A5 — gen 46: `unified_sign_mag_sub`  (score 111.5, +0.1; area 1.28x depth 1.09x power 0.99x)
 _model: qwen3-235b-a22b-2507_
 
 > The two input designs are functionally identical and both formally correct, differing only in minor structural variations in the sign assignment logic for the different-sign case. The second design uses an explicit `if-else` block inside the `else` branch to assign the sign bit when magnitudes are added, while the first uses a nested ternary. Synthesis results show the second achieves slightly bet
@@ -262,7 +262,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A''''' — gen 47: `unify_sign_logic_with_arithmetic_condition`  (score 111.7, +0.2; area 1.24x depth 1.15x power 0.98x)
+#### A6 — gen 47: `unify_sign_logic_with_arithmetic_condition`  (score 111.7, +0.2; area 1.24x depth 1.15x power 0.98x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation uses a conditional adder structure where the sign logic branches on `same_sign`, but the magnitude computation is already unified via `b_adj` and `cin`. However, the sign assignment in the `else` (different sign) case still uses a nested `if` to handle zero, and computes `a_gt_b` independently of the magnitude result.

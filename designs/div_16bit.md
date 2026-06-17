@@ -4,10 +4,10 @@
 
 **Evolution path** — 5 edge(s) from the reference (gen 0, score 100) to the best (gen 11, score 136.4):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 2: `use_builtin_div`  (score 134.5, +34.5; area 1.63x depth 0.76x power 1.95x)
+#### A2 — gen 2: `use_builtin_div`  (score 134.5, +34.5; area 1.63x depth 0.76x power 1.95x)
 _model: gpt-oss-120b_
 
 > Replace the hand‑written restoring‑division loop with the synthesizable Verilog division (`/`) and modulus (`%`) operators.  The divider is purely combinational, matching the original latency (zero‑cycle).  Modern synthesis tools implement these operators with optimized divider cores that are far smaller and have much lower logic depth than the 16‑iteration shift‑subtract loop that uses 32‑bit tem
@@ -65,7 +65,7 @@ _model: gpt-oss-120b_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'' — gen 3: `compact_divider_optimization`  (score 134.5, +0.0; area 1.63x depth 0.76x power 1.95x)
+#### A3 — gen 3: `compact_divider_optimization`  (score 134.5, +0.0; area 1.63x depth 0.76x power 1.95x)
 _model: deepseek-v4-flash_
 
 > Optimize the divider by using a more compact implementation that directly computes quotient and remainder using Verilog's built-in division operators, with proper zero-division handling. This reduces area by eliminating intermediate wire declarations and using more efficient logic structure. The implementation maintains the same functionality while being more area-efficient.
@@ -101,7 +101,7 @@ _model: deepseek-v4-flash_
  // EVOLVE-BLOCK-END
 ```
 
-#### A''' — gen 8: `use_conditional_divider_with_shift_optimization`  (score 120.4, -14.1; area 1.22x depth 0.95x power 1.50x)
+#### A4 — gen 8: `use_conditional_divider_with_shift_optimization`  (score 120.4, -14.1; area 1.22x depth 0.95x power 1.50x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation uses built-in division and modulo operators which, while concise, can lead to suboptimal synthesis results in terms of delay and area due to the complexity of general division logic. Instead, we can take advantage of the fact that the divisor is only 8-bit and the dividend is 16-bit — a fixed, small size — to implement a more efficient, unrolled non-restoring or restorin
@@ -165,7 +165,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'''' — gen 9: `use_builtin_ops_for_division`  (score 134.5, +14.1; area 1.63x depth 0.76x power 1.95x)
+#### A5 — gen 9: `use_builtin_ops_for_division`  (score 134.5, +14.1; area 1.63x depth 0.76x power 1.95x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation uses an unrolled non-restoring division algorithm with a loop synthesized into combinational logic. While this gives fine-grained control, modern synthesis tools can optimize built-in `/` and `%` operators more effectively, especially for fixed-width operands like 16-bit / 8-bit. The prior implementations showed that using built-in operators yields lower area, depth, and
@@ -229,7 +229,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A''''' — gen 11: `use_conditional_divider_optimization`  (score 136.4, +1.8; area 1.66x depth 0.76x power 2.01x)
+#### A6 — gen 11: `use_conditional_divider_optimization`  (score 136.4, +1.8; area 1.66x depth 0.76x power 2.01x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation correctly uses built-in operators for division and remainder, which allows synthesis tools to apply aggressive optimizations. However, the conditional (ternary) operator introduces a multiplexer for both quotient and remainder paths, which adds area and delay due to control logic replication.

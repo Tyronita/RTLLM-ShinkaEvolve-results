@@ -4,10 +4,10 @@
 
 **Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 1, score 174.6):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 1: `reduce_counter_width`  (score 174.6, +74.6; area 1.60x depth 2.00x power 1.66x)
+#### A2 — gen 1: `reduce_counter_width`  (score 174.6, +74.6; area 1.60x depth 2.00x power 1.66x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses a 4-bit counter (`[3:0] cnt`) to count up to `NUM_DIV/2 - 1`. However, `NUM_DIV` is parameterized with a default of 6, meaning the maximum count value is `6/2 - 1 = 2`, which requires only 2 bits (values 0, 1, 2). Using a 4-bit counter is overkill and wastes area and power.

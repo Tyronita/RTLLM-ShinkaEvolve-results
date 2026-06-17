@@ -4,10 +4,10 @@
 
 **Evolution path** — 4 edge(s) from the reference (gen 0, score 100) to the best (gen 20, score 143.9):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 6: `none`  (score 136.8, +36.8; area 1.05x depth 1.73x power 1.41x)
+#### A2 — gen 6: `none`  (score 136.8, +36.8; area 1.05x depth 1.73x power 1.41x)
 _model: gpt-oss-120b_
 
 > none
@@ -46,7 +46,7 @@ _model: gpt-oss-120b_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'' — gen 10: `use_cascaded_adder_with_minimized_logic`  (score 134.4, -2.4; area 1.03x depth 1.63x power 1.44x)
+#### A3 — gen 10: `use_cascaded_adder_with_minimized_logic`  (score 134.4, -2.4; area 1.03x depth 1.63x power 1.44x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design already uses a behavioral addition which is highly optimized by synthesis tools. However, in some synthesis libraries, explicit structural description using a carry-chain optimized adder (like a ripple carry with minimized gate count or inferred carry lookahead) can further reduce depth and area by allowing the tool to better map to fast carry logic in FPGAs or standard cells.
@@ -88,7 +88,7 @@ This transformation is logically equivalent: splitting an 8-bit addition into tw
  // EVOLVE-BLOCK-END
 ```
 
-#### A''' — gen 15: `kogge_stone_8bit`  (score 138.7, +4.3; area 0.84x depth 2.85x power 1.12x)
+#### A4 — gen 15: `kogge_stone_8bit`  (score 138.7, +4.3; area 0.84x depth 2.85x power 1.12x)
 _model: qwen3-235b-a22b-2507_
 
 > Replaced the ripple-carry and 4-bit segmented adder with a parallel-prefix Kogge-Stone 8-bit adder structure. This architecture minimizes critical path delay by computing carry signals using a logarithmic-depth prefix tree, reducing logic depth (critical path) significantly compared to ripple or segmented carry approaches. The Kogge-Stone adder computes propagate (P) and generate (G) signals at each bit, then computes all carries in parallel using associative carry computation. This leads to lower depth (faster addition), reduced area due to optimized carry logic, and lower switching activity (less power) compared to segmented or ripple designs. Although more complex to describe structurally, the synthesis tool maps this efficiently to compact and fast logic.
@@ -188,7 +188,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'''' — gen 20: `simplify_kogge_stone_implementation`  (score 143.9, +5.2; area 0.99x depth 2.19x power 1.37x)
+#### A5 — gen 20: `simplify_kogge_stone_implementation`  (score 143.9, +5.2; area 0.99x depth 2.19x power 1.37x)
 _model: qwen3-235b-a22b-2507_
 
 > The current Kogge-Stone adder implementation uses a verbose structural style with multiple generate blocks and intermediate wires (g1/p1, g2/p2, g3/p3), which increases area and power due to redundant signal declarations and complex hierarchical assignments. While this achieves good depth (20), it comes at a high area (60.38) and moderate power cost.

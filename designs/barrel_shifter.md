@@ -4,10 +4,10 @@
 
 **Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 1, score 101.4):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 1: `barrel_shifter_optimization`  (score 101.4, +1.4; area 1.02x depth 1.10x power 0.93x)
+#### A2 — gen 1: `barrel_shifter_optimization`  (score 101.4, +1.4; area 1.02x depth 1.10x power 0.93x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses a hierarchical mux structure with explicit mux2X1 modules, which is suboptimal for area and timing. We can replace this with a more efficient barrel shifter using a single assign statement with a shift operator, which synthesizes to a much smaller and faster circuit. The shift amount is determined by ctrl[2:0], and we need to implement a rotate-right (since the orig

@@ -4,10 +4,10 @@
 
 **Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 1, score 155.5):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 1: `use_wallace_tree_multiplier`  (score 155.5, +55.5; area 1.33x depth 1.84x power 1.54x)
+#### A2 — gen 1: `use_wallace_tree_multiplier`  (score 155.5, +55.5; area 1.33x depth 1.84x power 1.54x)
 _model: deepseek-v4-flash_
 
 > Replace the behavioral shift-and-add loop with a direct combinatorial multiply (`A * B`) that synthesis tools will implement using a highly optimized multiplier (e.g., Booth/Wallace/Dadda tree). This reduces area and depth vs the loop implementation which forces a serial structure with an adder per bit. The module's I/O and clock behavior (purely combinational) are identical - the reference uses `

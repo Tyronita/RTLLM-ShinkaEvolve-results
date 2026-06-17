@@ -4,10 +4,10 @@
 
 **Evolution path** — 9 edge(s) from the reference (gen 0, score 100) to the best (gen 34, score 107.0):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 3: `none`  (score 97.7, -2.3; area 0.97x depth 1.00x power 0.96x)
+#### A2 — gen 3: `none`  (score 97.7, -2.3; area 0.97x depth 1.00x power 0.96x)
 _model: qwen3-235b-a22b-2507_
 
 > The reference design uses a two-stage approach: first binary addition, then conditional correction via a multiplexer controlled by a comparison (temp_sum > 9). While functionally correct, the comparison and mux introduce unnecessary depth and area due to branching logic and wide adder usage in the correction path.  
@@ -59,7 +59,7 @@ This optimized design draws inspiration from digital arithmetic principles—par
 
 ```
 
-#### A'' — gen 5: `none`  (score 96.7, -1.0; area 0.95x depth 1.04x power 0.92x)
+#### A3 — gen 5: `none`  (score 96.7, -1.0; area 0.95x depth 1.04x power 0.92x)
 _model: deepseek-v4-flash_
 
 > none
@@ -105,7 +105,7 @@ _model: deepseek-v4-flash_
 
 ```
 
-#### A''' — gen 9: `simplify_correction_logic`  (score 99.7, +3.0; area 1.01x depth 1.07x power 0.92x)
+#### A4 — gen 9: `simplify_correction_logic`  (score 99.7, +3.0; area 1.01x depth 1.07x power 0.92x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation computes the carry-out using a logic expression that checks if the intermediate sum exceeds 9. While the logic is correct, it introduces redundancy in the form of explicit bit-wise operations (`temp_sum[4] | (temp_sum[3] & (temp_sum[2] | temp_sum[1]))`) which synthesizes to multiple gates.
@@ -140,7 +140,7 @@ A more compact and logically equivalent expression can be derived:
  // EVOLVE-BLOCK-END
 ```
 
-#### A'''' — gen 10: `none`  (score 99.7, +0.0; area 1.01x depth 1.07x power 0.92x)
+#### A5 — gen 10: `none`  (score 99.7, +0.0; area 1.01x depth 1.07x power 0.92x)
 _model: qwen3-235b-a22b-2507_
 
 > none
@@ -179,7 +179,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A''''' — gen 12: `bcd_adder_carry_lookahead`  (score 105.8, +6.1; area 0.91x depth 1.16x power 1.12x)
+#### A6 — gen 12: `bcd_adder_carry_lookahead`  (score 105.8, +6.1; area 0.91x depth 1.16x power 1.12x)
 _model: deepseek-v4-flash_
 
 > This design uses a carry-lookahead approach to compute the BCD sum more efficiently. Instead of using a full 5-bit adder followed by a conditional correction, we compute the binary sum and the correction in parallel. The key insight is that the BCD correction (adding 6) is needed when the binary sum exceeds 9. We can compute the carry-out and correction condition using a lookahead-like structure t
@@ -248,7 +248,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A'''''' — gen 16: `optimize_correction_adder_with_fixed_carry_logic`  (score 104.2, -1.7; area 0.92x depth 1.16x power 1.05x)
+#### A7 — gen 16: `optimize_correction_adder_with_fixed_carry_logic`  (score 104.2, -1.7; area 0.92x depth 1.16x power 1.05x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses a ripple-carry adder for the BCD correction stage (adding 6 when needed), which introduces unnecessary logic depth and area due to full carry logic. However, the correction value is sparse: only 4'b0110 (6) or 0. We can exploit this structure:
@@ -321,7 +321,7 @@ This m
  // EVOLVE-BLOCK-END
 ```
 
-#### A''''''' — gen 27: `simplify_bcd_correction_logic`  (score 105.8, +1.7; area 0.91x depth 1.16x power 1.12x)
+#### A8 — gen 27: `simplify_bcd_correction_logic`  (score 105.8, +1.7; area 0.91x depth 1.16x power 1.12x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses a behavioral conditional addition (`bin_sum + (need_correction ? 6 : 0)`) which is correct and synthesizable, but may prevent optimal logic minimization because synthesis tools can generate ripple-carry logic for the conditional adder. Instead, we can algebraically simplify the correction condition and directly compute the corrected sum bits using optimized Boolean expressi
@@ -381,7 +381,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A^8 — gen 32: `simplify_correction_logic_with_direct_sum_check`  (score 106.8, +1.0; area 0.94x depth 1.16x power 1.12x)
+#### A9 — gen 32: `simplify_correction_logic_with_direct_sum_check`  (score 106.8, +1.0; area 0.94x depth 1.16x power 1.12x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design computes the binary sum using a carry-lookahead adder (CLA), then separately computes the BCD correction condition using three terms: (bin_sum[3] & bin_sum[2]) | (bin_sum[3] & bin_sum[1]) | c4.
@@ -442,7 +442,7 @@ However, in a 4-bit BCD adder, the correction condition (sum > 9) can be simplif
  // EVOLVE-BLOCK-END
 ```
 
-#### A^9 — gen 34: `simplify_correction_logic`  (score 107.0, +0.3; area 0.91x depth 1.16x power 1.16x)
+#### A10 — gen 34: `simplify_correction_logic`  (score 107.0, +0.3; area 0.91x depth 1.16x power 1.16x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation correctly computes BCD correction by conditionally adding 6 when the binary sum exceeds 9 or a carry-out occurs. However, the logic for computing the corrected sum bits — especially the generation of internal carries (corr_c1, corr_c2) during correction — uses explicit full-adder-style equations that are functionally correct but structurally redundant.

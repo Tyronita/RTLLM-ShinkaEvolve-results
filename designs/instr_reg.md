@@ -4,10 +4,10 @@
 
 **Evolution path** — 2 edge(s) from the reference (gen 0, score 100) to the best (gen 8, score 114.5):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 3: `remove_unnecessary_state_and_assignments`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
+#### A2 — gen 3: `remove_unnecessary_state_and_assignments`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
 _model: deepseek-v4-flash_
 
 > The current code has an unused 3-bit `state` register and redundant assignments like `ins_p1 <= ins_p1;` which are unnecessary and waste area/power. Removing these will reduce area and power without changing functionality. The `state` register is declared but never used, so it can be eliminated. The explicit self-assignments in the always block are redundant because Verilog already implies storage
@@ -55,7 +55,7 @@ _model: deepseek-v4-flash_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'' — gen 8: `compact_instr_reg`  (score 114.5, +14.5; area 1.00x depth 1.50x power 1.00x)
+#### A3 — gen 8: `compact_instr_reg`  (score 114.5, +14.5; area 1.00x depth 1.50x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > The original design uses two 8-bit registers (`ins_p1` and `ins_p2`) to store instructions from two different sources, with conditional updates based on the `fetch` signal. The outputs are derived directly from bit slices of these registers.

@@ -4,10 +4,10 @@
 
 **Evolution path** — 7 edge(s) from the reference (gen 0, score 100) to the best (gen 39, score 116.8):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 8: `fsm_state_minimization`  (score 105.6, +5.6; area 1.11x depth 1.00x power 1.00x)
+#### A2 — gen 8: `fsm_state_minimization`  (score 105.6, +5.6; area 1.11x depth 1.00x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > The current FSM uses 6 states (s0-s5) encoded with 3 bits, but only 5 states are strictly needed to recognize the sequence "10011". The sequence can be detected using a minimal 5-state Mealy machine:
@@ -84,7 +84,7 @@ On input '1' in s4, we output MATCH=1 and transition back to s1 (to support over
 ... (diff truncated)
 ```
 
-#### A'' — gen 9: `compact_state_encoding`  (score 107.8, +2.3; area 1.02x depth 1.14x power 1.00x)
+#### A3 — gen 9: `compact_state_encoding`  (score 107.8, +2.3; area 1.02x depth 1.14x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > The current FSM uses 3 state bits (supporting up to 8 states) for only 5 states (s0-s4). By reordering and minimizing the state encoding to use only the necessary states and a denser binary assignment, we can reduce the logic complexity in the next-state and output logic. Although the original design already removed s5, the state encoding can be further optimized by using a more compact and logic-
@@ -136,7 +136,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A''' — gen 22: `compact_state_encoding_and_logic`  (score 114.4, +6.6; area 0.82x depth 1.60x power 1.00x)
+#### A4 — gen 22: `compact_state_encoding_and_logic`  (score 114.4, +6.6; area 0.82x depth 1.60x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > The current FSM uses a 3-bit state encoding (s0-s4) which leaves 3 unused states (5,6,7). While this encoding is functionally correct, it uses more bits than necessary and results in combinational logic that must handle wider vectors. We can reduce area and potentially improve depth by:
@@ -191,7 +191,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'''' — gen 23: `optimize_state_encoding_and_logic`  (score 114.4, +0.0; area 0.82x depth 1.60x power 1.00x)
+#### A5 — gen 23: `optimize_state_encoding_and_logic`  (score 114.4, +0.0; area 0.82x depth 1.60x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation uses a 3-bit state encoding for 5 states, which is suboptimal. The FSM only requires 3 states to be represented: s0 (idle), s1 (after '1'), s2 (after '10'), s3 (after '100'), and s4 (after '1001') — total of 5 distinct states. However, we can minimize the combinational logic depth and area by using one-hot encoding or more efficient state assignment.
@@ -241,7 +241,7 @@ Currently, the stat
  // EVOLVE-BLOCK-END
 ```
 
-#### A''''' — gen 26: `none`  (score 114.4, +0.0; area 0.82x depth 1.60x power 1.00x)
+#### A6 — gen 26: `none`  (score 114.4, +0.0; area 0.82x depth 1.60x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > none
@@ -289,7 +289,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'''''' — gen 36: `fsm_optimized_mealy`  (score 114.4, +0.0; area 0.82x depth 1.60x power 1.00x)
+#### A7 — gen 36: `fsm_optimized_mealy`  (score 114.4, +0.0; area 0.82x depth 1.60x power 1.00x)
 _model: deepseek-v4-flash_
 
 > After analyzing the prior programs, I determined that both implementations are functionally equivalent and achieve the same metrics. To improve further (reduce area/depth/power), I propose a more compact implementation. The key insight is that the FSM has only 5 states (S0-S4), which can be represented as 3-bit values. However, we can optimize the next-state logic by noticing patterns: states S1 a
@@ -335,7 +335,7 @@ _model: deepseek-v4-flash_
  // EVOLVE-BLOCK-END
 ```
 
-#### A''''''' — gen 39: `compact_state_decode`  (score 116.8, +2.4; area 1.19x depth 1.14x power 1.00x)
+#### A8 — gen 39: `compact_state_decode`  (score 116.8, +2.4; area 1.19x depth 1.14x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > Replace the explicit state comparison logic with a more compact, optimized state transition function that uses bit manipulation to reduce area and depth. The current design uses a cascade of comparisons (ST_cr == Sx) which synthesize into wide comparators. Instead, we observe that the state encoding can be exploited: only 5 of 8 states are used, and transitions depend only on IN and a few bits of 

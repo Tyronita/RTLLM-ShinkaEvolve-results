@@ -4,10 +4,10 @@
 
 **Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 8, score 101.6):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 8: `optimized_parallel2serial`  (score 101.6, +1.6; area 1.01x depth 1.00x power 1.04x)
+#### A2 — gen 8: `optimized_parallel2serial`  (score 101.6, +1.6; area 1.01x depth 1.00x power 1.04x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses a 4-bit shift register with rotate-left operation and a 2-bit counter. While functionally correct, we can optimize area and power by:

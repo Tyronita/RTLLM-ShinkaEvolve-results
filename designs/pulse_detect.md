@@ -4,10 +4,10 @@
 
 **Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 49, score 101.2):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 49: `optimize_pulse_detect_fsm`  (score 101.2, +1.2; area 1.02x depth 1.00x power 1.02x)
+#### A2 — gen 49: `optimize_pulse_detect_fsm`  (score 101.2, +1.2; area 1.02x depth 1.00x power 1.02x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses a two-stage FSM with combinational next-state logic and a separate combinational output. This can be simplified to a single always_ff block with registered state and output, reducing area and logic depth. The FSM states can be encoded more efficiently (using 2 bits is fine, but we can merge the output logic into the state machine to avoid extra combinational logic).

@@ -4,10 +4,10 @@
 
 **Evolution path** — 2 edge(s) from the reference (gen 0, score 100) to the best (gen 20, score 115.8):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 8: `optimize_pipeline_architecture`  (score 106.1, +6.1; area 1.14x depth 0.83x power 1.27x)
+#### A2 — gen 8: `optimize_pipeline_architecture`  (score 106.1, +6.1; area 1.14x depth 0.83x power 1.27x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses a straightforward 3-stage pipeline with partial product generation and a 2-level adder tree. We can optimize this by:
@@ -80,7 +80,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A'' — gen 20: `simplify_wallace_tree_with_fewer_stages`  (score 115.8, +9.7; area 1.10x depth 1.15x power 1.23x)
+#### A3 — gen 20: `simplify_wallace_tree_with_fewer_stages`  (score 115.8, +9.7; area 1.10x depth 1.15x power 1.23x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses a complex 3-stage Wallace tree reduction followed by a Kogge-Stone adder. While Kogge-Stone minimizes critical path, its prefix logic is area-expensive. Moreover, the Wallace tree structure is over-engineered for only 8 partial products.

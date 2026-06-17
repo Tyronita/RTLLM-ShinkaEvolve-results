@@ -4,10 +4,10 @@
 
 **Evolution path** — 2 edge(s) from the reference (gen 0, score 100) to the best (gen 15, score 103.7):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 4: `parallel-prefix-adder-32bit`  (score 96.9, -3.1; area 0.87x depth 1.19x power 0.88x)
+#### A2 — gen 4: `parallel-prefix-adder-32bit`  (score 96.9, -3.1; area 0.87x depth 1.19x power 0.88x)
 _model: deepseek-v4-flash_
 
 > Replace the hierarchical CLA-16 based 32-bit adder with a single Kogge-Stone parallel-prefix adder. This reduces logic depth from 92 to approximately 6-7 gate delays (log2(32) stages) while maintaining the exact same cycle-accurate behavior (combinational, same latency). The Kogge-Stone structure uses more wires but has significantly lower depth, improving both area and timing. The module interfac
@@ -76,7 +76,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A'' — gen 15: `none`  (score 103.7, +6.8; area 0.94x depth 1.26x power 0.94x)
+#### A3 — gen 15: `none`  (score 103.7, +6.8; area 0.94x depth 1.26x power 0.94x)
 _model: gpt-oss-120b_
 
 > none

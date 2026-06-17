@@ -4,10 +4,10 @@
 
 **Evolution path** — 2 edge(s) from the reference (gen 0, score 100) to the best (gen 29, score 103.0):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 23: `replace_rca_with_cpa`  (score 97.1, -2.9; area 0.99x depth 0.96x power 0.96x)
+#### A2 — gen 23: `replace_rca_with_cpa`  (score 97.1, -2.9; area 0.99x depth 0.96x power 0.96x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation uses a ripple-carry architecture across all levels (16b → 8b → 4b → 2b → 1b), which results in high logic depth due to the serial carry propagation. The critical path goes through multiple layers of carry chains, contributing to the measured depth of 55.
@@ -78,7 +78,7 @@ We can significantly reduce the critical path by replacing the fine-grained hier
 ... (diff truncated)
 ```
 
-#### A'' — gen 29: `ripple_carry_16bit_optimized`  (score 103.0, +5.9; area 0.99x depth 1.08x power 1.02x)
+#### A3 — gen 29: `ripple_carry_16bit_optimized`  (score 103.0, +5.9; area 0.99x depth 1.08x power 1.02x)
 _model: qwen3-235b-a22b-2507_
 
 > The current behavioral adder `assign {Co, y} = a + b + Cin;` is likely being synthesized into a ripple-carry adder (RCA), which has high logic depth due to carry propagation. While area and power are close to reference, the depth (57) is worse than the reference (55), hurting PPA-score.

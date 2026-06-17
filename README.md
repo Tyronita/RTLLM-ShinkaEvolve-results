@@ -35,17 +35,59 @@ Every candidate is compared against the RTLLM reference on the **identical** Yos
 
 The equivalence gate is the load-bearing piece: a finite testbench can be overfit (an earlier testbench-only run produced an obviously-fake 799× "win" by deleting all flip-flops). Holding each candidate to **formal/sequential equivalence** closes that hole — the wins below are real.
 
-## Worked example in detail — `adder_8bit` (ripple-carry → Kogge-Stone)
+## Every design at a glance
 
-The clearest, fully formally-proven story (best **143.9**: area 0.99×, depth **2.19×**, power 1.37×). Four edges from the reference; full lineage with every diff in **[adder_8bit.md](adder_8bit.md)**.
+![collage](figures/collage.png)
 
-- **A — reference (100):** 8× chained `full_adder` ripple-carry; carry ripples bit-to-bit → long critical path.
-- **A′ — gen 6 (136.8):** collapse to behavioral `assign {cout,sum} = a+b+cin`; depth 1.73×. The synthesizer now picks the adder.
-- **A″ — gen 10 (134.4):** a cascaded 4-bit-segment experiment — a *regression*, kept as an inspiration but not the line of descent.
-- **A‴ — gen 15 (138.7):** explicit **Kogge-Stone** parallel-prefix tree; depth jumps to **2.85×** but area drops to 0.84× (more cells).
-- **A⁗ — gen 20 (143.9):** *simplified* Kogge-Stone — rebalances area back to 0.99× while keeping depth 2.19×. The area↔depth trade, tuned.
+*Best PPA score vs generation for all 45 designs. Green = beats the human reference (100); grey = no improvement found. Most gain lands by gen ~20.*
 
-This is the canonical hardware tradeoff — **logarithmic-depth carry at the cost of cells** — discovered and then *rebalanced* by the search, and proven equivalent at every step.
+## Worked example — `adder_8bit`, edge by edge
+
+The clearest, fully formally-proven story: an 8-bit adder going from a ripple-carry chain (100) to a tuned parallel-prefix adder (**143.9**), proven equivalent at every step. Full lineage with every diff in **[the design page](designs/adder_8bit.md)**; the essential change and *why it moved PPA* at each edge:
+
+**A1 — reference (score 100.0)** · area 1.00× depth 1.00× power 1.00×
+The RTLLM golden design: eight `full_adder` cells chained, so the carry ripples bit 0→7 — a long combinational critical path.
+```verilog
+full_adder FA0 (.a(a[0]), .b(b[0]), .cin(cin),  .sum(sum[0]), .cout(c[0]));
+full_adder FA1 (.a(a[1]), .b(b[1]), .cin(c[0]), .sum(sum[1]), .cout(c[1]));
+... // c ripples all the way to FA7
+```
+
+**A2 — gen 6 (score 136.8, +36.8)** · area 1.05× **depth 1.73×** power 1.41×
+```diff
+-    full_adder FA0 (...); ... full_adder FA7 (...);   // explicit ripple chain
+-    assign cout = c[7];
++    assign {cout, sum} = a + b + cin;                 // let the synthesizer infer the adder
+```
+**Why:** the hand-written ripple chain *forces* a slow carry path; replacing it with the `+` operator lets Yosys+ABC pick a faster carry structure. Critical-path depth drops to **1.73×** — the first big jump.
+
+**A3 — gen 10 (score 134.4, −2.4)** · area 1.03× depth 1.63×
+```diff
+-    assign {cout, sum} = a + b + cin;
++    assign {carry_mid, sum_low}  = a[3:0] + b[3:0] + cin;        // split into two 4-bit adds
++    assign {cout,      sum_high} = a[7:4] + b[7:4] + carry_mid;
+```
+**Why:** a *regression* — manually splitting into two 4-bit segments serializes the carry between halves, slightly worse than the single inferred add. Evolution keeps it as an inspiration but **backtracks** — exactly what a search should do.
+
+**A4 — gen 15 (score 138.7, +4.3)** · **area 0.84×** **depth 2.85×** power 1.12×
+```diff
++    assign p[i] = a[i] ^ b[i];   assign g[i] = a[i] & b[i];     // generate/propagate
++    // Kogge-Stone prefix: compute ALL carries in parallel, log-depth tree (3 stages)
++    assign {g1[j],p1[j]} = ...;  assign {g2[j],p2[j]} = ...;  assign {g3[j],p3[j]} = ...;
+```
+**Why:** a true **Kogge-Stone parallel-prefix** adder computes every carry simultaneously through a logarithmic-depth tree instead of rippling — depth leaps to **2.85×**. But the explicit per-stage `g/p` wires cost cells, so area regresses to 0.84×.
+
+**A5 — gen 20 (score 143.9, +5.2)** · **area 0.99×** **depth 2.19×** power 1.37×
+```diff
+-    wire [7:0] g1,p1, g2,p2, g3,p3;   // three named prefix stages
+-    assign {g1[j],p1[j]} = ...; assign {g2[j],p2[j]} = ...; assign {g3[j],p3[j]} = ...;
++    assign c[2] = g[1] | (p[1]&g[0]) | (p[1]&p[0]&c[0]);        // carries flattened directly
++    assign c[3] = g[2] | (p[2]&g[1]) | (p[2]&p[1]&g[0]) | (p[2]&p[1]&p[0]&c[0]);
++    ... // each carry as one OR-of-products
+```
+**Why:** flattening the three named stages into direct carry expressions removes the redundant intermediate nets, so the synthesizer shares logic better — **area rebalances to 0.99×** while keeping the log-depth carry (2.19×). The area↔depth trade, tuned. **Final: 143.9.**
+
+This is the canonical hardware tradeoff — **logarithmic-depth carry bought with cells, then rebalanced** — discovered, explored, backtracked, and refined by the search, and held to formal equivalence at every edge.
 
 ## Tradeoff discussions + a reward-hack caught (other designs)
 
@@ -111,8 +153,6 @@ Does a bigger / more complex reference mean more headroom? **No — the opposite
 ![perproblem](figures/per_problem_axes.png)
 
 Best-vs-reference area (blue) and logic-depth (green) for every design, ranked. See the **[leaderboard in SUMMARY.md](SUMMARY.md)** for the full table, and each design's own page for its A→A′→A″ lineage with every code diff.
-
-See [SELECTION.md](SELECTION.md) for the per-design run + verdict.
 
 ## Scope — the 5 excluded designs
 

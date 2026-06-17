@@ -4,10 +4,10 @@
 
 **Evolution path** — 3 edge(s) from the reference (gen 0, score 100) to the best (gen 38, score 107.3):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 15: `kogge_stone_16bit_adder`  (score 103.6, +3.6; area 0.94x depth 1.28x power 0.93x)
+#### A2 — gen 15: `kogge_stone_16bit_adder`  (score 103.6, +3.6; area 0.94x depth 1.28x power 0.93x)
 _model: qwen3-235b-a22b-2507_
 
 > Replace the default ripple-carry addition in the shift-and-accumulate path with a Kogge-Stone parallel-prefix adder structure to reduce critical path delay. The current implementation uses a behavioral '+' operator which synthesizes to a ripple adder, leading to high logic depth (119). A Kogge-Stone adder reduces the carry propagation delay from O(n) to O(log n), significantly improving timing. We
@@ -76,7 +76,7 @@ _model: qwen3-235b-a22b-2507_
 ... (diff truncated)
 ```
 
-#### A'' — gen 21: `remove_kogge_stone_functional_model`  (score 100.0, -3.6; area 1.00x depth 1.00x power 1.00x)
+#### A3 — gen 21: `remove_kogge_stone_functional_model`  (score 100.0, -3.6; area 1.00x depth 1.00x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design attempts to use a Kogge-Stone adder via a Verilog function to reduce critical path delay. However, synthesizers typically do not interpret algorithmic descriptions of advanced adders (like the loop-based Kogge-Stone code here) into optimized netlists — instead, they may unroll the logic in a way that increases area and power due to replicated logic and poor timing closure. Moreo
@@ -145,7 +145,7 @@ _model: qwen3-235b-a22b-2507_
 ... (diff truncated)
 ```
 
-#### A''' — gen 38: `brent_kung_adder_32bit`  (score 107.3, +7.3; area 0.97x depth 1.34x power 0.96x)
+#### A4 — gen 38: `brent_kung_adder_32bit`  (score 107.3, +7.3; area 0.97x depth 1.34x power 0.96x)
 _model: qwen3-235b-a22b-2507_
 
 > Replace the default ripple carry adder used in the accumulation step with a Brent-Kung 32-bit parallel-prefix adder. This structure reduces critical path delay significantly compared to ripple carry while using fewer gates than Kogge-Stone, leading to better area-delay-product. The adder is instantiated within the behavioral block via a function, ensuring synthesizability. This improves timing (re

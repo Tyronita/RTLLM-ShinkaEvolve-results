@@ -4,10 +4,10 @@
 
 **Evolution path** — 6 edge(s) from the reference (gen 0, score 100) to the best (gen 41, score 132.5):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 1: `compact_counter_and_control_logic`  (score 129.4, +29.4; area 1.26x depth 1.40x power 1.23x)
+#### A2 — gen 1: `compact_counter_and_control_logic`  (score 129.4, +29.4; area 1.26x depth 1.40x power 1.23x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses a 4-bit counter (reg [3:0] cnt) to count up to MUL2_DIV_CLK-1 (6), which is unnecessarily wide—only 3 bits are needed. Reducing the counter to 3 bits saves area and may reduce power due to fewer flip-flops and reduced switching capacitance.
@@ -78,7 +78,7 @@ Additionally, the logic for generating clk_ave_r and clk_adjust_r uses multiple 
 ... (diff truncated)
 ```
 
-#### A'' — gen 7: `compact_frac_div`  (score 129.4, +0.0; area 1.26x depth 1.40x power 1.23x)
+#### A3 — gen 7: `compact_frac_div`  (score 129.4, +0.0; area 1.26x depth 1.40x power 1.23x)
 _model: qwen3-235b-a22b-2507_
 
 > The goal is to create a more efficient version of the fractional frequency divider by combining the best aspects of both provided implementations. The current best design (score 129.39) already improves upon the reference by:
@@ -149,7 +149,7 @@ _model: qwen3-235b-a22b-2507_
 ... (diff truncated)
 ```
 
-#### A''' — gen 14: `freq_divbyfrac_opt`  (score 129.4, +0.0; area 1.26x depth 1.40x power 1.23x)
+#### A4 — gen 14: `freq_divbyfrac_opt`  (score 129.4, +0.0; area 1.26x depth 1.40x power 1.23x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design is already functionally correct and uses a 3-bit counter to divide the clock by 3.5x via a 7-cycle pattern. However, there are still microarchitectural improvements that reduce area, depth, and power without altering the cycle-accurate behavior.
@@ -221,7 +221,7 @@ Key optimizations:
 ... (diff truncated)
 ```
 
-#### A'''' — gen 18: `optimize-counter-and-logic`  (score 130.6, +1.2; area 1.30x depth 1.40x power 1.23x)
+#### A5 — gen 18: `optimize-counter-and-logic`  (score 130.6, +1.2; area 1.30x depth 1.40x power 1.23x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses a 3-bit counter and separate comparators for cnt==0, cnt==1, cnt==4. We can reduce area and depth by:
@@ -292,7 +292,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A''''' — gen 37: `merge_pulse_logic_into_single_wire`  (score 132.5, +1.8; area 1.35x depth 1.40x power 1.23x)
+#### A6 — gen 37: `merge_pulse_logic_into_single_wire`  (score 132.5, +1.8; area 1.35x depth 1.40x power 1.23x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design computes `cnt_is_0`, `cnt_is_1`, and `cnt_is_4` as separate wires with distinct logic expressions. These are then combined in conditional assignments to `clk_ave_r` and `clk_adjust_r`. However, the conditions for setting the registers are simple ORs of these comparators.
@@ -364,7 +364,7 @@ We can reduce area and potentially logic depth by:
 ... (diff truncated)
 ```
 
-#### A'''''' — gen 41: `merged_pulse_logic_with_shared_term_optimization`  (score 132.5, +0.0; area 1.35x depth 1.40x power 1.23x)
+#### A7 — gen 41: `merged_pulse_logic_with_shared_term_optimization`  (score 132.5, +0.0; area 1.35x depth 1.40x power 1.23x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design computes `cnt_is_0`, `cnt_is_1`, and `cnt_is_4` using separate bit-level logic, and then forms `pos_pulse = cnt_is_0 || cnt_is_4` and `neg_pulse = cnt_is_1 || cnt_is_4`. These conditions can be algebraically simplified by observing that:

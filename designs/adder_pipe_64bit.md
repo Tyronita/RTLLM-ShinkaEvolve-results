@@ -4,10 +4,10 @@
 
 **Evolution path** — 1 edge(s) from the reference (gen 0, score 100) to the best (gen 14, score 101.4):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 14: `adder_pipe_64bit_optimized`  (score 101.4, +1.4; area 1.00x depth 1.04x power 1.00x)
+#### A2 — gen 14: `adder_pipe_64bit_optimized`  (score 101.4, +1.4; area 1.00x depth 1.04x power 1.00x)
 _model: deepseek-v4-flash_
 
 > This design combines the clean, minimal structure of the current program with the Kogge-Stone prefix tree approach from the inspiration program, but implemented more efficiently. The key insight is that for a pipelined 64-bit adder split into 16-bit chunks, the ripple-carry between chunks is the bottleneck. By replacing the ripple-carry between chunks with a lookahead carry computation, we can red

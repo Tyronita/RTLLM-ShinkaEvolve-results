@@ -4,10 +4,10 @@
 
 **Evolution path** — 3 edge(s) from the reference (gen 0, score 100) to the best (gen 13, score 117.3):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 3: `remove_redundant_logic`  (score 98.4, -1.6; area 1.01x depth 0.92x power 1.02x)
+#### A2 — gen 3: `remove_redundant_logic`  (score 98.4, -1.6; area 1.01x depth 0.92x power 1.02x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation computes both the subtraction (A - B) and separately checks (A == B). However, (A == B) is logically equivalent to (diff == 0), which is already computed in the subtraction path. This creates redundant logic: the equality check should be derived directly from the diff vector instead of re-comparing A and B.
@@ -44,7 +44,7 @@ Additionally, the A_greater condition uses (~cout && diff != 0)
  // EVOLVE-BLOCK-END
 ```
 
-#### A'' — gen 12: `parallel-prefix-comparator`  (score 105.3, +6.9; area 1.09x depth 0.92x power 1.17x)
+#### A3 — gen 12: `parallel-prefix-comparator`  (score 105.3, +6.9; area 1.09x depth 0.92x power 1.17x)
 _model: deepseek-v4-flash_
 
 > Replace the subtractor-based comparison with a direct bit-level comparator using parallel-prefix logic. The subtractor approach creates unnecessary arithmetic logic (full subtractor chain) when we only need comparison results. A direct comparator using generate/propagate signals can achieve the same function with less area and depth. The key insight: A > B can be computed by finding the most signi
@@ -91,7 +91,7 @@ _model: deepseek-v4-flash_
  // EVOLVE-BLOCK-END
 ```
 
-#### A''' — gen 13: `optimize_comparator_parallel_prefix`  (score 117.3, +12.0; area 1.09x depth 1.38x power 1.07x)
+#### A4 — gen 13: `optimize_comparator_parallel_prefix`  (score 117.3, +12.0; area 1.09x depth 1.38x power 1.07x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses a parallel-prefix chain for greater-than detection but computes A_less as ~A_greater & ~A_equal, which adds an extra gate delay. We can compute A_less directly using a similar parallel-prefix chain for less-than, which is symmetric to greater-than. This eliminates the need for the final combinational logic for A_less and reduces both area and depth. The less-than ch

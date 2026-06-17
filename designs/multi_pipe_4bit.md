@@ -4,10 +4,10 @@
 
 **Evolution path** — 3 edge(s) from the reference (gen 0, score 100) to the best (gen 21, score 115.7):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 2: `parallel_prefix_adder_optimization`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
+#### A2 — gen 2: `parallel_prefix_adder_optimization`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
 _model: deepseek-v4-flash_
 
 > Replace the original two-stage ripple-carry adder tree with a single parallel-prefix (Kogge-Stone style) adder tree that computes all partial products and sums them in one clock cycle. This reduces logic depth from 20 to approximately 12 while maintaining exact cycle-accurate equivalence. The key insight is that the original design uses two pipeline stages with simple ripple-carry adders; by using
@@ -76,7 +76,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A'' — gen 17: `optimize-partial-product-generation`  (score 100.4, +0.4; area 0.99x depth 1.00x power 1.02x)
+#### A3 — gen 17: `optimize-partial-product-generation`  (score 100.4, +0.4; area 0.99x depth 1.00x power 1.02x)
 _model: deepseek-v4-flash_
 
 > Replace the shift-based partial product generation with AND-based generation to reduce area and power. The current implementation uses shift operations which synthesize to larger multiplexers and shifters. Using AND gates directly is more area-efficient and reduces logic depth. Also remove unnecessary carry1/carry2 signals since the additions already handle carry propagation internally. This maint
@@ -145,7 +145,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A''' — gen 21: `carry-select-partial-product-tree`  (score 115.7, +15.3; area 1.02x depth 1.43x power 1.07x)
+#### A4 — gen 21: `carry-select-partial-product-tree`  (score 115.7, +15.3; area 1.02x depth 1.43x power 1.07x)
 _model: deepseek-v4-flash_
 
 > Replace the three separate adders (two in stage 1, one in stage 2) with a single carry-select adder tree that reduces both area and depth. The key insight is that for 4-bit multiplication, we can use a balanced Wallace-like reduction tree with carry-select adders instead of ripple-carry. This reduces the critical path depth from 20 to 18 while also reducing area by eliminating redundant carry logi

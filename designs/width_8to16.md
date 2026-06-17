@@ -4,10 +4,10 @@
 
 **Evolution path** — 4 edge(s) from the reference (gen 0, score 100) to the best (gen 24, score 134.6):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 2: `optimize_width_8to16_register_usage`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
+#### A2 — gen 2: `optimize_width_8to16_register_usage`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses separate registers for data_lock, flag, valid_out, and data_out. We can optimize by combining the flag and data_lock into a single register with a wider bit-width to reduce area and power. Specifically, we can use a 9-bit register where bit 8 acts as the flag and bits 7:0 store the data. This reduces the number of flip-flops from 10 (8 for data_lock + 1 for flag + 1
@@ -76,7 +76,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A'' — gen 6: `width_8to16_optimized`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
+#### A3 — gen 6: `width_8to16_optimized`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
 _model: deepseek-v4-flash_
 
 > After analyzing both implementations, I propose combining the best aspects:
@@ -146,7 +146,7 @@ The key optimization is
  // EVOLVE-BLOCK-END
 ```
 
-#### A''' — gen 9: `packed_state_optimization`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
+#### A4 — gen 9: `packed_state_optimization`  (score 100.0, +0.0; area 1.00x depth 1.00x power 1.00x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses a 9-bit state register ({flag, data_lock}) and performs bit-field extraction and assignment in separate operations. By restructuring the state update into a single atomic assignment using concatenation, we can reduce synthesis area and depth. The optimization replaces the individual assignments to state[8] and state[7:0] with a single assignment to the full 9-bit vector, en
@@ -201,7 +201,7 @@ _model: qwen3-235b-a22b-2507_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'''' — gen 24: `compact_state_machine`  (score 134.6, +34.6; area 1.01x depth 2.00x power 1.21x)
+#### A5 — gen 24: `compact_state_machine`  (score 134.6, +34.6; area 1.01x depth 2.00x power 1.21x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design uses a 9-bit state register ({flag, data_lock}) and separately controls valid_out and data_out. However, we can reduce physical area and power by minimizing control logic overhead.

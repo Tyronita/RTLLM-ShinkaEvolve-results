@@ -4,10 +4,10 @@
 
 **Evolution path** — 2 edge(s) from the reference (gen 0, score 100) to the best (gen 5, score 132.6):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 1: `optimize-counters-width`  (score 111.1, +11.1; area 1.18x depth 1.00x power 1.16x)
+#### A2 — gen 1: `optimize-counters-width`  (score 111.1, +11.1; area 1.18x depth 1.00x power 1.16x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses 4-bit counter for cnt_10 and 7-bit counter for cnt_100. The cnt_10 counter only needs to count from 0 to 4, so a 3-bit counter is sufficient. The cnt_100 counter counts from 0 to 49, which requires 6 bits (since 2^6=64 > 49). Reducing counter widths saves flip-flops and combinational logic, reducing area and power without changing functionality. The counters are res
@@ -67,7 +67,7 @@ _model: deepseek-v4-flash_
  // EVOLVE-BLOCK-END
 ```
 
-#### A'' — gen 5: `merge_clock_dividers_with_shared_counter`  (score 132.6, +21.5; area 1.41x depth 1.12x power 1.47x)
+#### A3 — gen 5: `merge_clock_dividers_with_shared_counter`  (score 132.6, +21.5; area 1.41x depth 1.12x power 1.47x)
 _model: qwen3-235b-a22b-2507_
 
 > Instead of maintaining two separate counters for 10MHz and 1MHz outputs (cnt_10 and cnt_100), we can reduce area and power by using a hierarchical approach:

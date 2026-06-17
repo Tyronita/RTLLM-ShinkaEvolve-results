@@ -4,10 +4,10 @@
 
 **Evolution path** — 6 edge(s) from the reference (gen 0, score 100) to the best (gen 40, score 125.3):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 3: `simplify_sign_handling_and_merge_conditions`  (score 108.3, +8.3; area 1.02x depth 1.17x power 1.06x)
+#### A2 — gen 3: `simplify_sign_handling_and_merge_conditions`  (score 108.3, +8.3; area 1.02x depth 1.17x power 1.06x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation uses multiple nested if-else branches to handle sign agreement and absolute value arithmetic, with duplicated logic for subtraction cases. This leads to deep combinational paths and redundant comparisons.
@@ -79,7 +79,7 @@ We can significantly simplify the design by:
 ... (diff truncated)
 ```
 
-#### A'' — gen 1: `fixed_point_adder_optimized`  (score 108.5, +0.2; area 1.16x depth 0.96x power 1.14x)
+#### A3 — gen 1: `fixed_point_adder_optimized`  (score 108.5, +0.2; area 1.16x depth 0.96x power 1.14x)
 _model: deepseek-v4-flash_
 
 > The current implementation uses a behavioral always block with reg variables that synthesizes to combinational logic. The key insight is that we can optimize the magnitude comparison and subtraction logic by using a more efficient approach. Instead of computing both sum and diff conditionally, we can use a single subtractor with a conditional swap of operands. The critical path is through the magn
@@ -148,7 +148,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A''' — gen 12: `use_two_stage_reduction_with_conditional_bypass`  (score 122.7, +14.2; area 1.16x depth 1.24x power 1.28x)
+#### A4 — gen 12: `use_two_stage_reduction_with_conditional_bypass`  (score 122.7, +14.2; area 1.16x depth 1.24x power 1.28x)
 _model: qwen3-235b-a22b-2507_
 
 > The current design computes both sum and difference in parallel with sign extension, which increases area and critical path due to wider (N-bit) operations. However, we can observe that:
@@ -223,7 +223,7 @@ Instead, we
 ... (diff truncated)
 ```
 
-#### A'''' — gen 15: `fixed_point_adder_opt`  (score 109.9, -12.8; area 1.00x depth 1.22x power 1.09x)
+#### A5 — gen 15: `fixed_point_adder_opt`  (score 109.9, -12.8; area 1.00x depth 1.22x power 1.09x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation uses a conditional magnitude comparison and subtraction for opposite-sign cases, which introduces a critical path through the comparator (a_ge_b) and multiplexed subtraction. While this reduces area compared to prior versions, the comparison and conditional select add delay and power due to wide combinational logic.
@@ -295,7 +295,7 @@ Key improvements:
 ... (diff truncated)
 ```
 
-#### A''''' — gen 38: `kogge_stone_sign_magnitude`  (score 122.7, +12.8; area 1.16x depth 1.24x power 1.28x)
+#### A6 — gen 38: `kogge_stone_sign_magnitude`  (score 122.7, +12.8; area 1.16x depth 1.24x power 1.28x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation uses a conditional subtraction with duplicated logic for |a|-|b| and |b|-|a|, increasing area and critical path depth. Key inefficiencies include:
@@ -369,7 +369,7 @@ Improvements:
 ... (diff truncated)
 ```
 
-#### A'''''' — gen 40: `use_conditional_addsub_with_carry_chain_opt`  (score 125.3, +2.6; area 1.14x depth 1.31x power 1.31x)
+#### A7 — gen 40: `use_conditional_addsub_with_carry_chain_opt`  (score 125.3, +2.6; area 1.14x depth 1.31x power 1.31x)
 _model: qwen3-235b-a22b-2507_
 
 > The current implementation separates magnitude addition and subtraction into distinct branches, which introduces multiplexers around the comparison and arithmetic units. This increases area and delay due to conditional logic.

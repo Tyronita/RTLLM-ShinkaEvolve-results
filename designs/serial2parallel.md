@@ -4,10 +4,10 @@
 
 **Evolution path** — 2 edge(s) from the reference (gen 0, score 100) to the best (gen 34, score 116.4):
 
-#### A — reference (gen 0, score 100.0)
+#### A1 — reference (gen 0, score 100.0)
 The RTLLM golden reference; PPA baseline (area/depth/power = 1.00x).
 
-#### A' — gen 33: `none`  (score 116.2, +16.2; area 1.02x depth 1.33x power 1.15x)
+#### A2 — gen 33: `none`  (score 116.2, +16.2; area 1.02x depth 1.33x power 1.15x)
 _model: deepseek-v4-flash_
 
 > none
@@ -76,7 +76,7 @@ _model: deepseek-v4-flash_
 ... (diff truncated)
 ```
 
-#### A'' — gen 34: `compact_serial2parallel`  (score 116.4, +0.2; area 1.03x depth 1.33x power 1.15x)
+#### A3 — gen 34: `compact_serial2parallel`  (score 116.4, +0.2; area 1.03x depth 1.33x power 1.15x)
 _model: qwen3-235b-a22b-2507_
 
 > Key improvements over the current design:
