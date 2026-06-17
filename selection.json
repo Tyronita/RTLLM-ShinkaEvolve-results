@@ -1,0 +1,182 @@
+{
+  "JC_counter": {
+    "run": "v3",
+    "reason": "no change (=reference)"
+  },
+  "LFSR": {
+    "run": "v3",
+    "reason": "no change"
+  },
+  "LIFObuffer": {
+    "run": "v3",
+    "reason": "no change"
+  },
+  "RAM": {
+    "run": "v4",
+    "reason": "v3 HACK: narrowed address bus + async read; v4 faithful (100)"
+  },
+  "ROM": {
+    "run": "v3",
+    "reason": "no change"
+  },
+  "accu": {
+    "run": "v3",
+    "reason": "legit FSM merge, same I/O timing"
+  },
+  "adder_16bit": {
+    "run": "v3",
+    "reason": "legit ripple-carry, same interface"
+  },
+  "adder_32bit": {
+    "run": "v3",
+    "reason": "legit block carry-lookahead"
+  },
+  "adder_8bit": {
+    "run": "v3",
+    "reason": "legit Kogge-Stone parallel-prefix (143.9)"
+  },
+  "adder_bcd": {
+    "run": "v3",
+    "reason": "legit carry-lookahead BCD"
+  },
+  "adder_pipe_64bit": {
+    "run": "v3",
+    "reason": "legit, all pipeline FFs preserved"
+  },
+  "alu": {
+    "run": "v3",
+    "reason": "no change"
+  },
+  "barrel_shifter": {
+    "run": "v4",
+    "reason": "tie; interface-frozen form"
+  },
+  "calendar": {
+    "run": "v3",
+    "reason": "no change"
+  },
+  "comparator_3bit": {
+    "run": "v4",
+    "reason": "v3 HACK: multiply-driven illegal nets; v4 faithful (100)"
+  },
+  "comparator_4bit": {
+    "run": "v4",
+    "reason": "legit parallel-prefix comparator (117.3)"
+  },
+  "counter_12": {
+    "run": "v3",
+    "reason": "no change"
+  },
+  "div_16bit": {
+    "run": "v4",
+    "reason": "legit behavioral / and % (136.4)"
+  },
+  "edge_detect": {
+    "run": "v4",
+    "reason": "tie; interface-frozen"
+  },
+  "fixed_point_adder": {
+    "run": "v4",
+    "reason": "legit shared-subtractor (125.3)"
+  },
+  "fixed_point_substractor": {
+    "run": "v3",
+    "reason": "legit shared-adder two's-complement (111.7)"
+  },
+  "freq_div": {
+    "run": "v3",
+    "reason": "legit hierarchical counter (132.6)"
+  },
+  "freq_divbyeven": {
+    "run": "v4",
+    "reason": "legit right-sized counter (174.6)"
+  },
+  "freq_divbyfrac": {
+    "run": "v3",
+    "reason": "legit, dual-edge registers preserved (132.5)"
+  },
+  "freq_divbyodd": {
+    "run": "v4",
+    "reason": "tie; interface-frozen"
+  },
+  "fsm": {
+    "run": "v4",
+    "reason": "v3 HACK: shift-register overfit not equivalent; v4 faithful FSM (116.8)"
+  },
+  "instr_reg": {
+    "run": "v3",
+    "reason": "legit dead-logic removal (114.5)"
+  },
+  "multi_16bit": {
+    "run": "v4",
+    "reason": "legit Brent-Kung adder (107.3)"
+  },
+  "multi_8bit": {
+    "run": "v4",
+    "reason": "legit behavioral * (155.5)"
+  },
+  "multi_booth_8bit": {
+    "run": "v4",
+    "reason": "no change"
+  },
+  "multi_pipe_4bit": {
+    "run": "v3",
+    "reason": "legit carry-select, latency preserved (115.7)"
+  },
+  "multi_pipe_8bit": {
+    "run": "v4",
+    "reason": "legit balanced reduction tree (115.8)"
+  },
+  "parallel2serial": {
+    "run": "v4",
+    "reason": "tie; interface-frozen"
+  },
+  "pe": {
+    "run": "v4",
+    "reason": "no change"
+  },
+  "pulse_detect": {
+    "run": "v3",
+    "reason": "legit Mealy merge, same cycle (101.2)"
+  },
+  "radix2_div": {
+    "run": "v3",
+    "reason": "no correct improvement found (baseline)"
+  },
+  "right_shifter": {
+    "run": "v4",
+    "reason": "tie; interface-frozen"
+  },
+  "sequence_detector": {
+    "run": "v4",
+    "reason": "v3 fragile non-one-hot re-encoding, zero gain; v4 faithful"
+  },
+  "serial2parallel": {
+    "run": "v3",
+    "reason": "legit FF reduction, output timing preserved (116.4)"
+  },
+  "signal_generator": {
+    "run": "v4",
+    "reason": "legit counter+XOR reflection (153.9)"
+  },
+  "square_wave": {
+    "run": "v3",
+    "reason": "legit subtractor removal (135.1; freq=0 corner untested)"
+  },
+  "sub_64bit": {
+    "run": "v4",
+    "reason": "v3 changed output reg->wire (interface); v4 Kogge-Stone (105.3)"
+  },
+  "traffic_light": {
+    "run": "v4",
+    "reason": "tie; interface-frozen"
+  },
+  "up_down_counter": {
+    "run": "v4",
+    "reason": "tie; interface-frozen"
+  },
+  "width_8to16": {
+    "run": "v3",
+    "reason": "legit register merge, byte order + timing preserved (134.6)"
+  }
+}
